@@ -15,9 +15,11 @@ import {
   View,
 } from "react-native";
 import Animated, {
+  Easing,
   FadeIn,
   FadeInDown,
   FadeOut,
+  interpolateColor,
   useAnimatedStyle,
   useSharedValue,
   withRepeat,
@@ -75,8 +77,10 @@ export default function PrayScreen() {
   const { recordPrayer } = useApp();
   const [step, setStep] = useState<PrayStep>("select");
   const [selected, setSelected] = useState<string[]>([]);
+  const [amenReady, setAmenReady] = useState(false);
 
   const pulse = useSharedValue(1);
+  const light = useSharedValue(0);
 
   useEffect(() => {
     if (step === "praying") {
@@ -88,13 +92,49 @@ export default function PrayScreen() {
         -1,
         true
       );
+      setAmenReady(false);
+      light.value = 0;
+      const t = setTimeout(() => {
+        setAmenReady(true);
+        light.value = withTiming(1, {
+          duration: 1800,
+          easing: Easing.inOut(Easing.cubic),
+        });
+      }, 5000);
+      return () => clearTimeout(t);
     } else {
       pulse.value = withTiming(1);
+      light.value = 0;
+      setAmenReady(false);
     }
   }, [step]);
 
   const pulseStyle = useAnimatedStyle(() => ({
     transform: [{ scale: pulse.value }],
+  }));
+
+  const lightOverlayStyle = useAnimatedStyle(() => ({
+    opacity: light.value,
+  }));
+
+  const prayerTextStyle = useAnimatedStyle(() => ({
+    color: interpolateColor(
+      light.value,
+      [0, 1],
+      ["#E8D9B8", "#1a1209"],
+    ),
+  }));
+
+  const breathTextStyle = useAnimatedStyle(() => ({
+    color: interpolateColor(
+      light.value,
+      [0, 1],
+      ["rgba(232,217,184,0.55)", "rgba(26,18,9,0.55)"],
+    ),
+  }));
+
+  const closeIconStyle = useAnimatedStyle(() => ({
+    opacity: 1,
   }));
 
   const topInset = Platform.OS === "web" ? 67 : insets.top;
@@ -138,11 +178,23 @@ export default function PrayScreen() {
           colors={["#0A0A14", "#10101E", "#0A0A14"]}
           style={StyleSheet.absoluteFillObject}
         />
+        <Animated.View
+          pointerEvents="none"
+          style={[
+            StyleSheet.absoluteFillObject,
+            { backgroundColor: "#FFFFFF" },
+            lightOverlayStyle,
+          ]}
+        />
         <TouchableOpacity
           style={[styles.closeBtn, { top: topInset + 16 }]}
           onPress={() => router.back()}
         >
-          <Ionicons name="close" size={24} color={colors.prayerText ?? "#E8D9B8"} />
+          <Ionicons
+            name="close"
+            size={24}
+            color={amenReady ? "#1a1209" : colors.prayerText ?? "#E8D9B8"}
+          />
         </TouchableOpacity>
 
         <Animated.View style={[styles.prayingInner, { paddingTop: topInset + 60, paddingBottom: bottomInset + 40 }]}>
@@ -155,7 +207,7 @@ export default function PrayScreen() {
           {isBreathing && (
             <Animated.Text
               entering={FadeIn.duration(800)}
-              style={[styles.breathText, { color: colors.prayerText + "88" ?? "#E8D9B888" }]}
+              style={[styles.breathText, breathTextStyle]}
             >
               Breathe slowly...
             </Animated.Text>
@@ -175,20 +227,24 @@ export default function PrayScreen() {
           </View>
 
           <ScrollView style={styles.prayerScroll} showsVerticalScrollIndicator={false}>
-            <Text style={[styles.prayerText, { color: colors.prayerText ?? "#E8D9B8" }]}>
+            <Animated.Text style={[styles.prayerText, prayerTextStyle]}>
               {prayerText}
-            </Text>
+            </Animated.Text>
           </ScrollView>
 
-          <TouchableOpacity
-            style={[styles.amenBtn, { borderColor: colors.goldGlow ?? "#D4A843" }]}
-            onPress={handleAmen}
-            activeOpacity={0.8}
-          >
-            <Text style={[styles.amenBtnText, { color: colors.goldGlow ?? "#D4A843" }]}>
-              Amen
-            </Text>
-          </TouchableOpacity>
+          {amenReady && (
+            <Animated.View entering={FadeIn.duration(1200)}>
+              <TouchableOpacity
+                style={[styles.amenBtn, { borderColor: colors.goldGlow ?? "#D4A843", backgroundColor: colors.goldGlow ?? "#D4A843" }]}
+                onPress={handleAmen}
+                activeOpacity={0.8}
+              >
+                <Text style={[styles.amenBtnText, { color: "#FFFFFF" }]}>
+                  Amen
+                </Text>
+              </TouchableOpacity>
+            </Animated.View>
+          )}
         </Animated.View>
       </View>
     );
