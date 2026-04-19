@@ -55,7 +55,7 @@ export default function PrayFrequencyScreen() {
             How often do you pray?
           </Text>
           <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>
-            Be honest — God already knows.
+            Your honest answer helps us guide you.
           </Text>
         </Animated.View>
 

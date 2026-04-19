@@ -37,7 +37,7 @@ export default function BeliefScreen() {
   const handleFinish = () => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     completeOnboarding();
-    router.replace("/(tabs)/home");
+    router.replace("/pray");
   };
 
   return (
