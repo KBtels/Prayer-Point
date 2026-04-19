@@ -20,6 +20,10 @@ function NativeTabLayout() {
         <Icon sf={{ default: "flame", selected: "flame.fill" }} />
         <Label>Streak</Label>
       </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="momentum">
+        <Icon sf={{ default: "chart.bar", selected: "chart.bar.fill" }} />
+        <Label>Momentum</Label>
+      </NativeTabs.Trigger>
     </NativeTabs>
   );
 }
@@ -83,6 +87,18 @@ function ClassicTabLayout() {
               <SymbolView name="flame" tintColor={color} size={24} />
             ) : (
               <Ionicons name="flame" size={22} color={color} />
+            ),
+        }}
+      />
+      <Tabs.Screen
+        name="momentum"
+        options={{
+          title: "Momentum",
+          tabBarIcon: ({ color }) =>
+            isIOS ? (
+              <SymbolView name="chart.bar" tintColor={color} size={24} />
+            ) : (
+              <Feather name="bar-chart-2" size={22} color={color} />
             ),
         }}
       />

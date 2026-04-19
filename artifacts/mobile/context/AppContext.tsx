@@ -19,6 +19,19 @@ export interface Reflection {
   categories: string[];
 }
 
+export interface Friend {
+  id: string;
+  name: string;
+  invitedAt: string; // ISO
+  sharedDays: number; // days both prayed since invite
+}
+
+export interface PrayerLog {
+  date: string; // toDateString()
+  count: number;
+  categories: string[];
+}
+
 interface AppState {
   hasOnboarded: boolean;
   name: string;
@@ -27,9 +40,12 @@ interface AppState {
   gratitudeTime: GratitudeTime;
   beliefLevel: BeliefLevel;
   streak: number;
+  longestStreak: number;
   lastPrayedDate: string;
   reflections: Reflection[];
   totalPrayers: number;
+  prayerLogs: PrayerLog[];
+  friends: Friend[];
 }
 
 interface AppContextValue extends AppState {
@@ -39,8 +55,10 @@ interface AppContextValue extends AppState {
   setGratitudeTime: (g: GratitudeTime) => void;
   setBeliefLevel: (b: BeliefLevel) => void;
   completeOnboarding: () => void;
-  recordPrayer: () => void;
+  recordPrayer: (categories?: string[]) => void;
   addReflection: (text: string, categories: string[]) => void;
+  addFriend: (name: string) => void;
+  removeFriend: (id: string) => void;
   isLoaded: boolean;
 }
 
@@ -56,9 +74,12 @@ const defaultState: AppState = {
   gratitudeTime: "",
   beliefLevel: "",
   streak: 0,
+  longestStreak: 0,
   lastPrayedDate: "",
   reflections: [],
   totalPrayers: 0,
+  prayerLogs: [],
+  friends: [],
 };
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
@@ -92,30 +113,83 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const completeOnboarding = () => save({ ...state, hasOnboarded: true });
 
-  const recordPrayer = useCallback(() => {
-    const today = new Date().toDateString();
-    const lastDate = state.lastPrayedDate;
-    let newStreak = state.streak;
+  const recordPrayer = useCallback(
+    (categories: string[] = []) => {
+      const today = new Date().toDateString();
+      const lastDate = state.lastPrayedDate;
+      let newStreak = state.streak;
 
-    if (lastDate === today) {
-      // already prayed today, just count the prayer
-    } else {
-      const yesterday = new Date();
-      yesterday.setDate(yesterday.getDate() - 1);
-      if (lastDate === yesterday.toDateString()) {
-        newStreak = state.streak + 1;
-      } else if (lastDate !== today) {
-        newStreak = 1;
+      if (lastDate === today) {
+        // already prayed today, just count the prayer
+      } else {
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        if (lastDate === yesterday.toDateString()) {
+          newStreak = state.streak + 1;
+        } else if (lastDate !== today) {
+          newStreak = 1;
+        }
       }
-    }
 
-    save({
-      ...state,
-      streak: newStreak,
-      lastPrayedDate: today,
-      totalPrayers: state.totalPrayers + 1,
-    });
-  }, [state, save]);
+      // Update prayer logs (append count to today)
+      const existingLog = state.prayerLogs.find((l) => l.date === today);
+      const newLogs = existingLog
+        ? state.prayerLogs.map((l) =>
+            l.date === today
+              ? {
+                  ...l,
+                  count: l.count + 1,
+                  categories: Array.from(
+                    new Set([...l.categories, ...categories])
+                  ),
+                }
+              : l
+          )
+        : [
+            ...state.prayerLogs,
+            { date: today, count: 1, categories },
+          ];
+
+      // Bump shared streaks for any friend who is still "active"
+      const newFriends = state.friends.map((f) => ({
+        ...f,
+        sharedDays: lastDate === today ? f.sharedDays : f.sharedDays + 1,
+      }));
+
+      save({
+        ...state,
+        streak: newStreak,
+        longestStreak: Math.max(state.longestStreak, newStreak),
+        lastPrayedDate: today,
+        totalPrayers: state.totalPrayers + 1,
+        prayerLogs: newLogs,
+        friends: newFriends,
+      });
+    },
+    [state, save]
+  );
+
+  const addFriend = useCallback(
+    (name: string) => {
+      const trimmed = name.trim();
+      if (!trimmed) return;
+      const friend: Friend = {
+        id: Date.now().toString() + Math.random().toString(36).slice(2, 9),
+        name: trimmed,
+        invitedAt: new Date().toISOString(),
+        sharedDays: 0,
+      };
+      save({ ...state, friends: [friend, ...state.friends] });
+    },
+    [state, save]
+  );
+
+  const removeFriend = useCallback(
+    (id: string) => {
+      save({ ...state, friends: state.friends.filter((f) => f.id !== id) });
+    },
+    [state, save]
+  );
 
   const addReflection = useCallback(
     (text: string, categories: string[]) => {
@@ -142,6 +216,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         completeOnboarding,
         recordPrayer,
         addReflection,
+        addFriend,
+        removeFriend,
         isLoaded,
       }}
     >

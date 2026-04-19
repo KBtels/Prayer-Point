@@ -152,7 +152,7 @@ export default function PrayScreen() {
 
   const handleAmen = () => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    recordPrayer();
+    recordPrayer(selected);
     setStep("complete");
   };
 
