@@ -9,6 +9,7 @@ import { router } from "expo-router";
 import React, { useState } from "react";
 import {
   Alert,
+  Linking,
   Platform,
   ScrollView,
   StyleSheet,
@@ -66,6 +67,28 @@ export default function SettingsScreen() {
 
   const topInset = Platform.OS === "web" ? 67 : insets.top;
   const bottomInset = Platform.OS === "web" ? 34 : insets.bottom;
+
+  const handleContact = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const url =
+      "mailto:hello@prayerpoint.app?subject=Prayer%20Point%20Feedback";
+    try {
+      const supported = await Linking.canOpenURL(url);
+      if (supported) {
+        await Linking.openURL(url);
+      } else {
+        Alert.alert(
+          "Get in touch",
+          "Email us at hello@prayerpoint.app and we'll get back to you."
+        );
+      }
+    } catch {
+      Alert.alert(
+        "Get in touch",
+        "Email us at hello@prayerpoint.app and we'll get back to you."
+      );
+    }
+  };
 
   const handleReset = () => {
     Alert.alert(
@@ -284,7 +307,38 @@ export default function SettingsScreen() {
           </TouchableOpacity>
         </Animated.View>
 
-        <Animated.View entering={FadeInDown.duration(500).delay(300)}>
+        <Animated.View entering={FadeInDown.duration(500).delay(275)}>
+          <TouchableOpacity
+            style={[
+              styles.contactCard,
+              { backgroundColor: colors.card, borderColor: colors.border },
+            ]}
+            onPress={handleContact}
+            activeOpacity={0.85}
+          >
+            <View
+              style={[
+                styles.contactIcon,
+                { backgroundColor: (colors.goldGlow ?? "#D4A843") + "1F" },
+              ]}
+            >
+              <Feather name="mail" size={18} color={colors.goldGlow ?? "#D4A843"} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.contactTitle, { color: colors.foreground }]}>
+                Get in touch with us
+              </Text>
+              <Text
+                style={[styles.contactSubtitle, { color: colors.mutedForeground }]}
+              >
+                Questions, prayer requests, or feedback — we'd love to hear from you.
+              </Text>
+            </View>
+            <Feather name="chevron-right" size={20} color={colors.mutedForeground} />
+          </TouchableOpacity>
+        </Animated.View>
+
+        <Animated.View entering={FadeInDown.duration(500).delay(325)}>
           <TouchableOpacity
             style={[styles.resetBtn, { borderColor: colors.destructive }]}
             onPress={handleReset}
@@ -469,6 +523,32 @@ const styles = StyleSheet.create({
   divider: {
     height: 1,
     marginHorizontal: 18,
+  },
+  contactCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    marginTop: 16,
+  },
+  contactIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  contactTitle: {
+    fontSize: 15,
+    fontFamily: "Inter_600SemiBold",
+    marginBottom: 2,
+  },
+  contactSubtitle: {
+    fontSize: 12,
+    fontFamily: "Inter_400Regular",
+    lineHeight: 17,
   },
   resetBtn: {
     flexDirection: "row",
