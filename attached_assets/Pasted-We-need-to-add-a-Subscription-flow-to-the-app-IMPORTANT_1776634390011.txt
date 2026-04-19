@@ -1,0 +1,53 @@
+We need to add a Subscription flow to the app.
+
+IMPORTANT RULES:
+- Do NOT refactor the entire app.
+- Do NOT change existing prayer, onboarding, or streak logic unless explicitly required.
+- Add the minimum code necessary.
+- Keep the tone calm, respectful, and non-intrusive.
+- Monetization must never interrupt an active prayer moment.
+
+OBJECTIVE:
+Add a Subscription page and trigger logic based on usage milestones.
+
+WHEN TO TRIGGER THE SUBSCRIPTION PAGE:
+1) Automatically AFTER the user completes their 3rd prayer session.
+2) Automatically WHEN the user tries to invite a family member or loved one to join a streak.
+
+SUBSCRIPTION PAGE CONTENT:
+- Title: "Continue Your Journey"
+- Short supportive message explaining that consistency and community deepen prayer.
+- Display subscription tiers clearly:
+
+  • Free Trial: 1 week (full access)
+  • 3 Weeks — R37
+  • 1 Month — R55
+  • 1 Year — R630 (best value)
+
+- A clear primary CTA button: “Start Free Trial”
+- Secondary option: “Maybe Later”
+
+BEHAVIOR RULES:
+- If the user is already subscribed, never show this page.
+- If user selects “Maybe Later”, allow them to continue without blocking.
+- If user clicks a paid tier or free trial, store the selection locally (mock subscription state; no real payments yet).
+
+IMPLEMENTATION DETAILS:
+- Create a new screen/page/component called something like `Subscription` or `Subscribe`.
+- Add a simple `isSubscribed` boolean and `prayerCount` counter if they do not already exist.
+- Increment prayerCount after each completed prayer session.
+- Show the subscription page only when prayerCount reaches 3 (once).
+- Also show it when the invite family/loved one action is triggered.
+
+DESIGN & UX:
+- Use the same design language as the rest of the app.
+- Calm colors, spacious layout.
+- No countdown timers.
+- No pressure language.
+
+DELIVERABLE:
+- Working Subscription page
+- Trigger logic implemented
+- No breaking changes elsewhere
+
+Explain briefly what files were changed and why.

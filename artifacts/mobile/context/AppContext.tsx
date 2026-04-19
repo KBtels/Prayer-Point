@@ -52,6 +52,9 @@ interface AppState {
   appRating: number;
   appReview: string;
   ratingPrompted: boolean;
+  isSubscribed: boolean;
+  subscriptionTier: string;
+  subscriptionPromptedAfterPrayer: boolean;
 }
 
 interface AppContextValue extends AppState {
@@ -69,6 +72,8 @@ interface AppContextValue extends AppState {
   removeFriend: (id: string) => void;
   setAppRating: (rating: number, review: string) => void;
   markRatingPrompted: () => void;
+  setSubscription: (tier: string) => void;
+  markSubscriptionPromptedAfterPrayer: () => void;
   isLoaded: boolean;
 }
 
@@ -95,6 +100,9 @@ const defaultState: AppState = {
   appRating: 0,
   appReview: "",
   ratingPrompted: false,
+  isSubscribed: false,
+  subscriptionTier: "",
+  subscriptionPromptedAfterPrayer: false,
 };
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
@@ -215,6 +223,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const markRatingPrompted = () => save({ ...state, ratingPrompted: true });
 
+  const setSubscription = (tier: string) =>
+    save({ ...state, isSubscribed: true, subscriptionTier: tier });
+
+  const markSubscriptionPromptedAfterPrayer = () =>
+    save({ ...state, subscriptionPromptedAfterPrayer: true });
+
   const addReflection = useCallback(
     (text: string, categories: string[]) => {
       const reflection: Reflection = {
@@ -246,6 +260,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         removeFriend,
         setAppRating,
         markRatingPrompted,
+        setSubscription,
+        markSubscriptionPromptedAfterPrayer,
         isLoaded,
       }}
     >

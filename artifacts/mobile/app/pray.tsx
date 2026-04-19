@@ -78,6 +78,9 @@ export default function PrayScreen() {
     appRating,
     setAppRating,
     markRatingPrompted,
+    isSubscribed,
+    subscriptionPromptedAfterPrayer,
+    markSubscriptionPromptedAfterPrayer,
   } = useApp();
   const [showRating, setShowRating] = useState(false);
   const [step, setStep] = useState<PrayStep>("select");
@@ -182,8 +185,13 @@ export default function PrayScreen() {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     recordPrayer(activeTopics);
     setStep("complete");
-    if (!ratingPrompted && appRating === 0 && totalPrayers + 1 === 2) {
+    const newCount = totalPrayers + 1;
+    if (!ratingPrompted && appRating === 0 && newCount === 2) {
       setTimeout(() => setShowRating(true), 900);
+    }
+    if (!isSubscribed && !subscriptionPromptedAfterPrayer && newCount === 3) {
+      markSubscriptionPromptedAfterPrayer();
+      setTimeout(() => router.push("/subscribe"), 1200);
     }
   };
 

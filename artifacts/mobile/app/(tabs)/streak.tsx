@@ -46,7 +46,7 @@ const DAY_LETTERS = ["S", "M", "T", "W", "T", "F", "S"];
 export default function StreakScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { streak, totalPrayers, lastPrayedDate, reflections } = useApp();
+  const { streak, totalPrayers, lastPrayedDate, reflections, isSubscribed } = useApp();
 
   // Pinned quote — rotates daily, stable while screen is open
   const pinnedQuote = useMemo(() => {
@@ -140,6 +140,10 @@ export default function StreakScreen() {
 
   const handleInvite = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (!isSubscribed) {
+      router.push("/subscribe");
+      return;
+    }
     const message = `I'm on a ${streak}-day prayer streak with Prayer Point 🙏\n\nJoin me — let's grow our faith together.`;
     try {
       await Share.share({ message });
