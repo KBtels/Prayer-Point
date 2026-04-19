@@ -35,7 +35,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 const CATEGORIES = [
   "Family",
   "Marriage",
-  "Beginner",
   "Enlightenment",
   "Gratitude",
   "Peace",
@@ -167,7 +166,7 @@ export default function PrayScreen() {
 
   if (step === "praying") {
     const prayerText = generatePrayer({
-      category: selected[0] ?? "Beginner",
+      category: selected[0] ?? "Gratitude",
       customTopic: trimmedCustom || undefined,
       sessionSeed,
     });

@@ -44,7 +44,7 @@ export default function NameScreen() {
       >
         <Animated.View entering={FadeInDown.duration(500)}>
           <Text style={[styles.step, { color: colors.mutedForeground }]}>
-            1 of 5
+            1 of 6
           </Text>
           <Text style={[styles.title, { color: colors.foreground }]}>
             What's your name?

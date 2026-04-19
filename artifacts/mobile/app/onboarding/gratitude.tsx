@@ -49,7 +49,7 @@ export default function GratitudeScreen() {
       <View style={styles.inner}>
         <Animated.View entering={FadeInDown.duration(500)}>
           <Text style={[styles.step, { color: colors.mutedForeground }]}>
-            4 of 5
+            4 of 6
           </Text>
           <Text style={[styles.title, { color: colors.foreground }]}>
             When did you last give thanks?
@@ -101,7 +101,7 @@ export default function GratitudeScreen() {
             <Animated.View entering={FadeInDown.duration(400)}>
               <TouchableOpacity
                 style={[styles.btn, { backgroundColor: colors.primary }]}
-                onPress={() => router.push("/onboarding/belief")}
+                onPress={() => router.push("/onboarding/prayer-scale")}
                 activeOpacity={0.85}
               >
                 <Text style={[styles.btnText, { color: colors.primaryForeground }]}>

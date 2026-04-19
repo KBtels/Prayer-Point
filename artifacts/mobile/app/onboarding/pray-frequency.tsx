@@ -49,7 +49,7 @@ export default function PrayFrequencyScreen() {
       <View style={styles.inner}>
         <Animated.View entering={FadeInDown.duration(500)}>
           <Text style={[styles.step, { color: colors.mutedForeground }]}>
-            3 of 5
+            3 of 6
           </Text>
           <Text style={[styles.title, { color: colors.foreground }]}>
             How often do you pray?

@@ -1,4 +1,4 @@
-import { useApp, type BeliefLevel } from "@/context/AppContext";
+import { useApp, type PrayerScale } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
 import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
@@ -13,31 +13,25 @@ import {
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-const OPTIONS: { label: string; value: BeliefLevel; desc: string }[] = [
-  { label: "Yes", value: "Yes", desc: "I believe in its power" },
-  { label: "Maybe", value: "Maybe", desc: "I'm open to it" },
-  { label: "Sometimes", value: "Sometimes", desc: "Faith comes in waves" },
+const OPTIONS: { label: string; value: PrayerScale; hint: string }[] = [
+  { label: "Beginner", value: "Beginner", hint: "Just starting out" },
+  { label: "Frequent prayer", value: "Frequent prayer", hint: "I pray regularly" },
+  { label: "Great prayer", value: "Great prayer", hint: "Prayer is part of who I am" },
 ];
 
-export default function BeliefScreen() {
+export default function PrayerScaleScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { beliefLevel, setBeliefLevel, completeOnboarding } = useApp();
-  const [selected, setSelected] = useState<BeliefLevel>(beliefLevel);
+  const { prayerScale, setPrayerScale } = useApp();
+  const [selected, setSelected] = useState<PrayerScale>(prayerScale);
 
   const topInset = Platform.OS === "web" ? 67 : insets.top;
   const bottomInset = Platform.OS === "web" ? 34 : insets.bottom;
 
-  const handleSelect = (val: BeliefLevel) => {
+  const handleSelect = (val: PrayerScale) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setSelected(val);
-    setBeliefLevel(val);
-  };
-
-  const handleFinish = () => {
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    completeOnboarding();
-    router.replace("/pray");
+    setPrayerScale(val);
   };
 
   return (
@@ -54,13 +48,13 @@ export default function BeliefScreen() {
       <View style={styles.inner}>
         <Animated.View entering={FadeInDown.duration(500)}>
           <Text style={[styles.step, { color: colors.mutedForeground }]}>
-            6 of 6
+            5 of 6
           </Text>
           <Text style={[styles.title, { color: colors.foreground }]}>
-            Do you believe in the power of prayer?
+            Your prayer scale
           </Text>
           <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>
-            Wherever you are, God meets you there.
+            Where would you place yourself today?
           </Text>
         </Animated.View>
 
@@ -70,7 +64,7 @@ export default function BeliefScreen() {
             return (
               <Animated.View
                 key={opt.value}
-                entering={FadeInDown.duration(500).delay(i * 100 + 150)}
+                entering={FadeInDown.duration(500).delay(i * 80 + 150)}
               >
                 <TouchableOpacity
                   style={[
@@ -97,15 +91,15 @@ export default function BeliefScreen() {
                   </Text>
                   <Text
                     style={[
-                      styles.optDesc,
+                      styles.optHint,
                       {
                         color: isSelected
-                          ? colors.primaryForeground + "CC"
+                          ? colors.primaryForeground
                           : colors.mutedForeground,
                       },
                     ]}
                   >
-                    {opt.desc}
+                    {opt.hint}
                   </Text>
                 </TouchableOpacity>
               </Animated.View>
@@ -118,11 +112,11 @@ export default function BeliefScreen() {
             <Animated.View entering={FadeInDown.duration(400)}>
               <TouchableOpacity
                 style={[styles.btn, { backgroundColor: colors.primary }]}
-                onPress={handleFinish}
+                onPress={() => router.push("/onboarding/belief")}
                 activeOpacity={0.85}
               >
                 <Text style={[styles.btnText, { color: colors.primaryForeground }]}>
-                  Begin My Journey
+                  Continue
                 </Text>
               </TouchableOpacity>
             </Animated.View>
@@ -161,13 +155,13 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
   },
   optLabel: {
-    fontSize: 18,
-    fontFamily: "Inter_600SemiBold",
-    marginBottom: 4,
+    fontSize: 17,
+    fontFamily: "Inter_500Medium",
   },
-  optDesc: {
-    fontSize: 14,
+  optHint: {
+    fontSize: 13,
     fontFamily: "Inter_400Regular",
+    marginTop: 4,
   },
   footer: { marginTop: "auto" as const, paddingTop: 32 },
   btn: {

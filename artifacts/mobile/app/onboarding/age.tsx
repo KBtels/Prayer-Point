@@ -48,7 +48,7 @@ export default function AgeScreen() {
       <View style={styles.inner}>
         <Animated.View entering={FadeInDown.duration(500)}>
           <Text style={[styles.step, { color: colors.mutedForeground }]}>
-            2 of 5
+            2 of 6
           </Text>
           <Text style={[styles.title, { color: colors.foreground }]}>
             Your age group

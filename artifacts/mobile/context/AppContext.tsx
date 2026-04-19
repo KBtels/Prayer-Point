@@ -11,6 +11,7 @@ export type AgeGroup = "Teen" | "Young Adult" | "Elder" | "";
 export type PrayFrequency = "Not much" | "Often enough" | "It's been a while" | "Daily" | "";
 export type GratitudeTime = "Today" | "This week" | "A while back" | "Over a month ago" | "";
 export type BeliefLevel = "Yes" | "Maybe" | "Sometimes" | "";
+export type PrayerScale = "Beginner" | "Frequent prayer" | "Great prayer" | "";
 
 export interface Reflection {
   id: string;
@@ -39,6 +40,7 @@ interface AppState {
   prayFrequency: PrayFrequency;
   gratitudeTime: GratitudeTime;
   beliefLevel: BeliefLevel;
+  prayerScale: PrayerScale;
   streak: number;
   longestStreak: number;
   lastPrayedDate: string;
@@ -54,6 +56,7 @@ interface AppContextValue extends AppState {
   setPrayFrequency: (f: PrayFrequency) => void;
   setGratitudeTime: (g: GratitudeTime) => void;
   setBeliefLevel: (b: BeliefLevel) => void;
+  setPrayerScale: (p: PrayerScale) => void;
   completeOnboarding: () => void;
   recordPrayer: (categories?: string[]) => void;
   addReflection: (text: string, categories: string[]) => void;
@@ -73,6 +76,7 @@ const defaultState: AppState = {
   prayFrequency: "",
   gratitudeTime: "",
   beliefLevel: "",
+  prayerScale: "",
   streak: 0,
   longestStreak: 0,
   lastPrayedDate: "",
@@ -110,6 +114,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     save({ ...state, gratitudeTime });
   const setBeliefLevel = (beliefLevel: BeliefLevel) =>
     save({ ...state, beliefLevel });
+  const setPrayerScale = (prayerScale: PrayerScale) =>
+    save({ ...state, prayerScale });
 
   const completeOnboarding = () => save({ ...state, hasOnboarded: true });
 
@@ -213,6 +219,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setPrayFrequency,
         setGratitudeTime,
         setBeliefLevel,
+        setPrayerScale,
         completeOnboarding,
         recordPrayer,
         addReflection,
