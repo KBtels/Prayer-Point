@@ -2,6 +2,8 @@ import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
 import { Ionicons, Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
+import * as ImagePicker from "expo-image-picker";
+import { Image } from "expo-image";
 import { router } from "expo-router";
 import React from "react";
 import {
@@ -20,7 +22,42 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 export default function SettingsScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { name, age, prayFrequency, streak, totalPrayers } = useApp();
+  const {
+    name,
+    age,
+    prayFrequency,
+    streak,
+    totalPrayers,
+    profileImage,
+    setProfileImage,
+  } = useApp();
+
+  const handlePickImage = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) {
+      Alert.alert(
+        "Permission needed",
+        "We need access to your photos so you can pick a profile picture."
+      );
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
+    });
+    if (!result.canceled && result.assets[0]?.uri) {
+      setProfileImage(result.assets[0].uri);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setProfileImage("");
+  };
 
   const topInset = Platform.OS === "web" ? 67 : insets.top;
   const bottomInset = Platform.OS === "web" ? 34 : insets.bottom;
@@ -78,16 +115,38 @@ export default function SettingsScreen() {
             { backgroundColor: colors.prayerBg ?? "#0A0A14" },
           ]}
         >
-          <View
+          <TouchableOpacity
+            onPress={handlePickImage}
+            onLongPress={profileImage ? handleRemoveImage : undefined}
+            activeOpacity={0.85}
             style={[
               styles.avatar,
               { backgroundColor: colors.goldGlow + "33" ?? "#D4A84333" },
             ]}
           >
-            <Text style={[styles.avatarText, { color: colors.goldGlow ?? "#D4A843" }]}>
-              {name ? name[0].toUpperCase() : "G"}
-            </Text>
-          </View>
+            {profileImage ? (
+              <Image
+                source={{ uri: profileImage }}
+                style={styles.avatarImage}
+                contentFit="cover"
+              />
+            ) : (
+              <Text style={[styles.avatarText, { color: colors.goldGlow ?? "#D4A843" }]}>
+                {name ? name[0].toUpperCase() : "G"}
+              </Text>
+            )}
+            <View
+              style={[
+                styles.avatarEdit,
+                { backgroundColor: colors.goldGlow ?? "#D4A843" },
+              ]}
+            >
+              <Feather name="camera" size={12} color="#0A0A14" />
+            </View>
+          </TouchableOpacity>
+          <Text style={[styles.avatarHint, { color: colors.prayerText + "66" ?? "#E8D9B866" }]}>
+            {profileImage ? "Tap to change · hold to remove" : "Tap to add a photo"}
+          </Text>
           <Text style={[styles.profileName, { color: colors.prayerText ?? "#E8D9B8" }]}>
             {name || "Faithful One"}
           </Text>
@@ -220,16 +279,39 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   avatar: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
+    width: 96,
+    height: 96,
+    borderRadius: 48,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 16,
+    marginBottom: 8,
+    overflow: "hidden",
+    position: "relative",
+  },
+  avatarImage: {
+    width: "100%",
+    height: "100%",
   },
   avatarText: {
-    fontSize: 28,
+    fontSize: 36,
     fontFamily: "Inter_700Bold",
+  },
+  avatarEdit: {
+    position: "absolute",
+    bottom: 0,
+    right: 0,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 2,
+    borderColor: "#0A0A14",
+  },
+  avatarHint: {
+    fontSize: 11,
+    fontFamily: "Inter_400Regular",
+    marginBottom: 12,
   },
   profileName: {
     fontSize: 22,

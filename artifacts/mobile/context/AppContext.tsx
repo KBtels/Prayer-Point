@@ -36,6 +36,7 @@ export interface PrayerLog {
 interface AppState {
   hasOnboarded: boolean;
   name: string;
+  profileImage: string;
   age: AgeGroup;
   prayFrequency: PrayFrequency;
   gratitudeTime: GratitudeTime;
@@ -52,6 +53,7 @@ interface AppState {
 
 interface AppContextValue extends AppState {
   setName: (name: string) => void;
+  setProfileImage: (uri: string) => void;
   setAge: (age: AgeGroup) => void;
   setPrayFrequency: (f: PrayFrequency) => void;
   setGratitudeTime: (g: GratitudeTime) => void;
@@ -72,6 +74,7 @@ const STORAGE_KEY = "god_first_state";
 const defaultState: AppState = {
   hasOnboarded: false,
   name: "",
+  profileImage: "",
   age: "",
   prayFrequency: "",
   gratitudeTime: "",
@@ -107,6 +110,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const setName = (name: string) => save({ ...state, name });
+  const setProfileImage = (profileImage: string) =>
+    save({ ...state, profileImage });
   const setAge = (age: AgeGroup) => save({ ...state, age });
   const setPrayFrequency = (prayFrequency: PrayFrequency) =>
     save({ ...state, prayFrequency });
@@ -215,6 +220,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       value={{
         ...state,
         setName,
+        setProfileImage,
         setAge,
         setPrayFrequency,
         setGratitudeTime,
