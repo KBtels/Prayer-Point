@@ -55,7 +55,15 @@ const CATEGORIES = [
   "Expectations",
 ];
 
-type PrayStep = "select" | "praying" | "complete";
+type PrayStep = "select" | "breath" | "praying" | "complete";
+
+const BREATH_TRIGGERS = ["Stress", "Anxiety", "Uncertainty", "Depression"];
+const BREATH_PHASES: { label: string; duration: number; scale: number }[] = [
+  { label: "Breathe in", duration: 4000, scale: 1.5 },
+  { label: "Hold", duration: 4000, scale: 1.5 },
+  { label: "Breathe out", duration: 6000, scale: 1 },
+];
+const BREATH_TOTAL_CYCLES = 3;
 
 const { width } = Dimensions.get("window");
 
@@ -72,6 +80,7 @@ export default function PrayScreen() {
   const pulse = useSharedValue(1);
   const light = useSharedValue(0);
 
+  // breath step renderer is delegated below; first hook handles transitions
   useEffect(() => {
     if (step === "praying") {
       pulse.value = withRepeat(
@@ -148,10 +157,12 @@ export default function PrayScreen() {
     }
   };
 
+  const needsBreath = selected.some((c) => BREATH_TRIGGERS.includes(c));
+
   const handlePray = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setSessionSeed(Date.now());
-    setStep("praying");
+    setStep(needsBreath ? "breath" : "praying");
   };
 
   const trimmedCustom = customTopic.trim();
@@ -164,14 +175,29 @@ export default function PrayScreen() {
     setStep("complete");
   };
 
+  if (step === "breath") {
+    return (
+      <BreathScreen
+        topInset={topInset}
+        bottomInset={bottomInset}
+        colors={colors}
+        onContinue={() => {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+          setStep("praying");
+        }}
+        onSkip={() => setStep("praying")}
+        onClose={() => router.back()}
+      />
+    );
+  }
+
   if (step === "praying") {
     const prayerText = generatePrayer({
       category: selected[0] ?? "Gratitude",
       customTopic: trimmedCustom || undefined,
       sessionSeed,
     });
-    const isBreathing =
-      selected.includes("Stress") || selected.includes("Anxiety");
+    const isBreathing = false;
 
     return (
       <View
@@ -663,6 +689,209 @@ const styles = StyleSheet.create({
   },
   reflectLinkText: {
     fontSize: 15,
+    fontFamily: "Inter_400Regular",
+  },
+});
+
+type BreathScreenProps = {
+  topInset: number;
+  bottomInset: number;
+  colors: ReturnType<typeof useColors>;
+  onContinue: () => void;
+  onSkip: () => void;
+  onClose: () => void;
+};
+
+function BreathScreen({
+  topInset,
+  bottomInset,
+  colors,
+  onContinue,
+  onSkip,
+  onClose,
+}: BreathScreenProps) {
+  const [phaseIndex, setPhaseIndex] = useState(0);
+  const [cycle, setCycle] = useState(1);
+  const scale = useSharedValue(1);
+  const phase = BREATH_PHASES[phaseIndex];
+  const completed = cycle > BREATH_TOTAL_CYCLES;
+
+  useEffect(() => {
+    if (completed) return;
+    scale.value = withTiming(phase.scale, {
+      duration: phase.duration,
+      easing: Easing.inOut(Easing.cubic),
+    });
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const t = setTimeout(() => {
+      const nextIndex = (phaseIndex + 1) % BREATH_PHASES.length;
+      if (nextIndex === 0) setCycle((c) => c + 1);
+      setPhaseIndex(nextIndex);
+    }, phase.duration);
+    return () => clearTimeout(t);
+  }, [phaseIndex, cycle, completed]);
+
+  useEffect(() => {
+    if (completed) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    }
+  }, [completed]);
+
+  const circleStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const gold = colors.goldGlow ?? "#D4A843";
+  const text = colors.prayerText ?? "#E8D9B8";
+
+  return (
+    <View style={[styles.prayingContainer, { backgroundColor: colors.prayerBg ?? "#0A0A14" }]}>
+      <LinearGradient
+        colors={["#0A0A14", "#10101E", "#0A0A14"]}
+        style={StyleSheet.absoluteFillObject}
+        pointerEvents="none"
+      />
+      <TouchableOpacity
+        style={[styles.closeBtn, { top: topInset + 16 }]}
+        onPress={onClose}
+      >
+        <Ionicons name="close" size={24} color={text} />
+      </TouchableOpacity>
+
+      <View
+        style={[
+          breathStyles.inner,
+          { paddingTop: topInset + 60, paddingBottom: bottomInset + 32 },
+        ]}
+      >
+        <Animated.Text
+          entering={FadeIn.duration(600)}
+          style={[breathStyles.title, { color: text }]}
+        >
+          Take a moment to breathe
+        </Animated.Text>
+        <Animated.Text
+          entering={FadeIn.duration(600).delay(200)}
+          style={[breathStyles.subtitle, { color: text + "88" }]}
+        >
+          Let your body settle before you bring this to God.
+        </Animated.Text>
+
+        <View style={breathStyles.circleWrap}>
+          <Animated.View
+            style={[
+              breathStyles.circleOuter,
+              circleStyle,
+              { borderColor: gold + "55", backgroundColor: gold + "14" },
+            ]}
+          />
+          <View style={breathStyles.phaseLabelWrap} pointerEvents="none">
+            <Text style={[breathStyles.phaseLabel, { color: text }]}>
+              {completed ? "Well done" : phase.label}
+            </Text>
+            {!completed && (
+              <Text style={[breathStyles.cycleLabel, { color: text + "77" }]}>
+                {cycle} of {BREATH_TOTAL_CYCLES}
+              </Text>
+            )}
+          </View>
+        </View>
+
+        <View style={breathStyles.footer}>
+          {completed ? (
+            <Animated.View entering={FadeIn.duration(500)}>
+              <TouchableOpacity
+                style={[breathStyles.continueBtn, { backgroundColor: gold }]}
+                onPress={onContinue}
+                activeOpacity={0.85}
+              >
+                <Text style={[breathStyles.continueText, { color: "#0A0A14" }]}>
+                  Begin Prayer
+                </Text>
+              </TouchableOpacity>
+            </Animated.View>
+          ) : (
+            <TouchableOpacity onPress={onSkip} style={breathStyles.skipBtn}>
+              <Text style={[breathStyles.skipText, { color: text + "88" }]}>
+                Skip to prayer
+              </Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
+    </View>
+  );
+}
+
+const breathStyles = StyleSheet.create({
+  inner: {
+    flex: 1,
+    paddingHorizontal: 32,
+    alignItems: "center",
+  },
+  title: {
+    fontSize: 24,
+    fontFamily: "Inter_600SemiBold",
+    textAlign: "center",
+    marginBottom: 10,
+  },
+  subtitle: {
+    fontSize: 14,
+    fontFamily: "Inter_400Regular",
+    textAlign: "center",
+    lineHeight: 22,
+    fontStyle: "italic",
+    marginBottom: 24,
+  },
+  circleWrap: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    width: "100%",
+  },
+  circleOuter: {
+    width: 180,
+    height: 180,
+    borderRadius: 90,
+    borderWidth: 2,
+  },
+  phaseLabelWrap: {
+    position: "absolute",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  phaseLabel: {
+    fontSize: 22,
+    fontFamily: "Inter_500Medium",
+    letterSpacing: 0.5,
+  },
+  cycleLabel: {
+    fontSize: 12,
+    fontFamily: "Inter_400Regular",
+    marginTop: 6,
+    letterSpacing: 1,
+  },
+  footer: {
+    paddingTop: 24,
+    width: "100%",
+    alignItems: "center",
+  },
+  continueBtn: {
+    paddingHorizontal: 56,
+    paddingVertical: 18,
+    borderRadius: 50,
+  },
+  continueText: {
+    fontSize: 16,
+    fontFamily: "Inter_600SemiBold",
+    letterSpacing: 0.5,
+  },
+  skipBtn: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+  },
+  skipText: {
+    fontSize: 13,
     fontFamily: "Inter_400Regular",
   },
 });
