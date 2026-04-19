@@ -41,6 +41,14 @@ const CATEGORIES = [
   "School day",
   "New week",
   "Long trip",
+  "Work",
+  "Commuting",
+  "School work submission",
+  "Depression",
+  "Joy",
+  "Presentation",
+  "Relationship",
+  "Expectations",
 ];
 
 type PrayStep = "select" | "praying" | "complete";
