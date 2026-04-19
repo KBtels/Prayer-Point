@@ -165,8 +165,7 @@ export default function PrayScreen() {
       selected.includes("Stress") || selected.includes("Anxiety");
 
     return (
-      <Pressable
-        onPress={handleScreenTap}
+      <View
         style={[
           styles.prayingContainer,
           { backgroundColor: colors.prayerBg ?? "#0A0A14" },
@@ -196,63 +195,70 @@ export default function PrayScreen() {
           />
         </TouchableOpacity>
 
-        <Animated.View style={[styles.prayingInner, { paddingTop: topInset + 60, paddingBottom: bottomInset + 40 }]}>
-          <Animated.View style={[styles.glowCircle, pulseStyle, { borderColor: colors.goldGlow + "44" ?? "#D4A84344" }]}>
-            <View style={[styles.innerCircle, { backgroundColor: colors.goldGlow + "22" ?? "#D4A84322" }]}>
-              <Ionicons name="heart" size={32} color={colors.goldGlow ?? "#D4A843"} />
-            </View>
-          </Animated.View>
-
-          {isBreathing && (
-            <Animated.Text
-              entering={FadeIn.duration(800)}
-              style={[styles.breathText, breathTextStyle]}
-            >
-              Breathe slowly...
-            </Animated.Text>
-          )}
-
-          <View style={styles.categoriesBadges}>
-            {selected.map((cat) => (
-              <View
-                key={cat}
-                style={[styles.badge, { backgroundColor: colors.goldGlow + "22" ?? "#D4A84322" }]}
-              >
-                <Text style={[styles.badgeText, { color: colors.goldGlow ?? "#D4A843" }]}>
-                  {cat}
-                </Text>
+        <ScrollView
+          style={styles.prayingScroll}
+          contentContainerStyle={[
+            styles.prayingInner,
+            { paddingTop: topInset + 60, paddingBottom: bottomInset + 40 },
+          ]}
+          showsVerticalScrollIndicator={false}
+        >
+          <Pressable onPress={handleScreenTap} style={styles.prayingTapArea}>
+            <Animated.View style={[styles.glowCircle, pulseStyle, { borderColor: colors.goldGlow + "44" ?? "#D4A84344" }]}>
+              <View style={[styles.innerCircle, { backgroundColor: colors.goldGlow + "22" ?? "#D4A84322" }]}>
+                <Ionicons name="heart" size={32} color={colors.goldGlow ?? "#D4A843"} />
               </View>
-            ))}
-          </View>
+            </Animated.View>
 
-          <ScrollView style={styles.prayerScroll} showsVerticalScrollIndicator={false}>
+            {isBreathing && (
+              <Animated.Text
+                entering={FadeIn.duration(800)}
+                style={[styles.breathText, breathTextStyle]}
+              >
+                Breathe slowly...
+              </Animated.Text>
+            )}
+
+            <View style={styles.categoriesBadges}>
+              {selected.map((cat) => (
+                <View
+                  key={cat}
+                  style={[styles.badge, { backgroundColor: colors.goldGlow + "22" ?? "#D4A84322" }]}
+                >
+                  <Text style={[styles.badgeText, { color: colors.goldGlow ?? "#D4A843" }]}>
+                    {cat}
+                  </Text>
+                </View>
+              ))}
+            </View>
+
             <Animated.Text style={[styles.prayerText, prayerTextStyle]}>
               {prayerText}
             </Animated.Text>
-          </ScrollView>
 
-          {amenReady ? (
-            <Animated.View entering={FadeIn.duration(1200)}>
-              <TouchableOpacity
-                style={[styles.amenBtn, { borderColor: colors.goldGlow ?? "#D4A843", backgroundColor: colors.goldGlow ?? "#D4A843" }]}
-                onPress={handleAmen}
-                activeOpacity={0.8}
+            {amenReady ? (
+              <Animated.View entering={FadeIn.duration(1200)}>
+                <TouchableOpacity
+                  style={[styles.amenBtn, { borderColor: colors.goldGlow ?? "#D4A843", backgroundColor: colors.goldGlow ?? "#D4A843" }]}
+                  onPress={handleAmen}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[styles.amenBtnText, { color: "#FFFFFF" }]}>
+                    Amen
+                  </Text>
+                </TouchableOpacity>
+              </Animated.View>
+            ) : (
+              <Animated.Text
+                entering={FadeIn.duration(800).delay(600)}
+                style={[styles.tapHint, { color: colors.prayerText + "77" ?? "#E8D9B877" }]}
               >
-                <Text style={[styles.amenBtnText, { color: "#FFFFFF" }]}>
-                  Amen
-                </Text>
-              </TouchableOpacity>
-            </Animated.View>
-          ) : (
-            <Animated.Text
-              entering={FadeIn.duration(800).delay(600)}
-              style={[styles.tapHint, { color: colors.prayerText + "77" ?? "#E8D9B877" }]}
-            >
-              Double-tap when ready to say Amen
-            </Animated.Text>
-          )}
-        </Animated.View>
-      </Pressable>
+                Double-tap when ready to say Amen
+              </Animated.Text>
+            )}
+          </Pressable>
+        </ScrollView>
+      </View>
     );
   }
 
@@ -469,9 +475,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  prayingInner: {
+  prayingScroll: {
     flex: 1,
+    width: "100%",
+  },
+  prayingInner: {
+    flexGrow: 1,
     paddingHorizontal: 32,
+    alignItems: "center",
+  },
+  prayingTapArea: {
+    flex: 1,
+    width: "100%",
     alignItems: "center",
   },
   glowCircle: {
@@ -511,10 +526,6 @@ const styles = StyleSheet.create({
   badgeText: {
     fontSize: 13,
     fontFamily: "Inter_500Medium",
-  },
-  prayerScroll: {
-    flex: 1,
-    width: "100%",
   },
   prayerText: {
     fontSize: 18,
