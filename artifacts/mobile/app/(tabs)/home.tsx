@@ -1,3 +1,4 @@
+import HabitQuoteModal, { hasShownQuoteThisSession, markQuoteShownThisSession } from "@/components/HabitQuoteModal";
 import { Logo } from "@/components/Logo";
 import { VideoBackground } from "@/components/VideoBackground";
 import { HABIT_QUOTES } from "@/constants/quotes";
@@ -6,7 +7,7 @@ import { useColors } from "@/hooks/useColors";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Platform,
   ScrollView,
@@ -32,6 +33,17 @@ export default function HomeScreen() {
   const [habitQuote] = useState(
     () => HABIT_QUOTES[Math.floor(Math.random() * HABIT_QUOTES.length)]
   );
+  const [showQuote, setShowQuote] = useState(false);
+
+  useEffect(() => {
+    if (!hasShownQuoteThisSession()) {
+      const t = setTimeout(() => {
+        setShowQuote(true);
+        markQuoteShownThisSession();
+      }, 450);
+      return () => clearTimeout(t);
+    }
+  }, []);
 
   const topInset = Platform.OS === "web" ? 67 : insets.top;
   const bottomInset = Platform.OS === "web" ? 34 : insets.bottom;
@@ -42,6 +54,7 @@ export default function HomeScreen() {
   const prayedToday = lastPrayedDate === today.toDateString();
 
   return (
+    <>
     <ScrollView
       style={[styles.container, { backgroundColor: colors.background }]}
       contentContainerStyle={[
@@ -84,31 +97,6 @@ export default function HomeScreen() {
       </View>
 
       <View style={styles.body}>
-
-      <Animated.View
-        entering={FadeInDown.duration(500).delay(50)}
-        style={[
-          styles.quoteCard,
-          { backgroundColor: colors.card, borderColor: colors.border },
-        ]}
-      >
-        <View style={styles.quoteHeader}>
-          <Ionicons
-            name="sparkles"
-            size={14}
-            color={colors.goldGlow ?? "#D4A843"}
-          />
-          <Text style={[styles.quoteLabel, { color: colors.mutedForeground }]}>
-            On Habit
-          </Text>
-        </View>
-        <Text style={[styles.quoteText, { color: colors.foreground }]}>
-          "{habitQuote.text}"
-        </Text>
-        <Text style={[styles.quoteAuthor, { color: colors.mutedForeground }]}>
-          — {habitQuote.author}
-        </Text>
-      </Animated.View>
 
       <Animated.View
         entering={FadeInDown.duration(500).delay(100)}
@@ -234,6 +222,13 @@ export default function HomeScreen() {
       </Animated.View>
       </View>
     </ScrollView>
+
+    <HabitQuoteModal
+      visible={showQuote}
+      quote={habitQuote}
+      onClose={() => setShowQuote(false)}
+    />
+    </>
   );
 }
 
@@ -280,36 +275,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
-  },
-  quoteCard: {
-    borderRadius: 16,
-    borderWidth: 1,
-    padding: 18,
-    marginBottom: 16,
-  },
-  quoteHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    marginBottom: 10,
-  },
-  quoteLabel: {
-    fontSize: 11,
-    fontFamily: "Inter_600SemiBold",
-    letterSpacing: 1.2,
-    textTransform: "uppercase",
-  },
-  quoteText: {
-    fontSize: 15,
-    fontFamily: "Inter_400Regular",
-    fontStyle: "italic",
-    lineHeight: 22,
-    marginBottom: 8,
-  },
-  quoteAuthor: {
-    fontSize: 12,
-    fontFamily: "Inter_500Medium",
-    letterSpacing: 0.3,
   },
   streakCard: {
     borderRadius: 20,

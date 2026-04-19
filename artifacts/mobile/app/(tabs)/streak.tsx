@@ -1,5 +1,6 @@
 import { Logo } from "@/components/Logo";
 import { VideoBackground } from "@/components/VideoBackground";
+import { HABIT_QUOTES } from "@/constants/quotes";
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
 import { Feather, Ionicons } from "@expo/vector-icons";
@@ -46,6 +47,12 @@ export default function StreakScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { streak, totalPrayers, lastPrayedDate, reflections } = useApp();
+
+  // Pinned quote — rotates daily, stable while screen is open
+  const pinnedQuote = useMemo(() => {
+    const dayKey = Math.floor(Date.now() / (1000 * 60 * 60 * 24));
+    return HABIT_QUOTES[dayKey % HABIT_QUOTES.length];
+  }, []);
 
   const topInset = Platform.OS === "web" ? 24 : insets.top;
   const bottomInset = Platform.OS === "web" ? 34 : insets.bottom;
@@ -204,6 +211,28 @@ export default function StreakScreen() {
           </Text>
           <Text style={[styles.title, { color: "#FFFFFF" }]}>
             Streak
+          </Text>
+        </Animated.View>
+
+        {/* Pinned habit quote */}
+        <Animated.View
+          entering={FadeInDown.duration(500).delay(75)}
+          style={[
+            styles.pinnedQuoteCard,
+            { backgroundColor: colors.card, borderColor: gold + "55" },
+          ]}
+        >
+          <View style={styles.pinnedQuoteHeader}>
+            <Ionicons name="bookmark" size={14} color={gold} />
+            <Text style={[styles.pinnedQuoteLabel, { color: gold }]}>
+              On Habit
+            </Text>
+          </View>
+          <Text style={[styles.pinnedQuoteText, { color: colors.foreground }]}>
+            "{pinnedQuote.text}"
+          </Text>
+          <Text style={[styles.pinnedQuoteAuthor, { color: colors.mutedForeground }]}>
+            — {pinnedQuote.author}
           </Text>
         </Animated.View>
 
@@ -528,6 +557,36 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_700Bold",
   },
 
+  pinnedQuoteCard: {
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 18,
+    marginBottom: 16,
+  },
+  pinnedQuoteHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 10,
+  },
+  pinnedQuoteLabel: {
+    fontSize: 11,
+    fontFamily: "Inter_600SemiBold",
+    letterSpacing: 1.2,
+    textTransform: "uppercase",
+  },
+  pinnedQuoteText: {
+    fontSize: 15,
+    fontFamily: "Inter_400Regular",
+    fontStyle: "italic",
+    lineHeight: 22,
+    marginBottom: 8,
+  },
+  pinnedQuoteAuthor: {
+    fontSize: 12,
+    fontFamily: "Inter_500Medium",
+    letterSpacing: 0.3,
+  },
   heroCard: {
     borderRadius: 24,
     borderWidth: 1,
