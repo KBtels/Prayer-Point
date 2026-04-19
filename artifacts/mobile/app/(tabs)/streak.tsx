@@ -214,28 +214,6 @@ export default function StreakScreen() {
           </Text>
         </Animated.View>
 
-        {/* Pinned habit quote */}
-        <Animated.View
-          entering={FadeInDown.duration(500).delay(75)}
-          style={[
-            styles.pinnedQuoteCard,
-            { backgroundColor: colors.card, borderColor: gold + "55" },
-          ]}
-        >
-          <View style={styles.pinnedQuoteHeader}>
-            <Ionicons name="bookmark" size={14} color={gold} />
-            <Text style={[styles.pinnedQuoteLabel, { color: gold }]}>
-              On Habit
-            </Text>
-          </View>
-          <Text style={[styles.pinnedQuoteText, { color: colors.foreground }]}>
-            "{pinnedQuote.text}"
-          </Text>
-          <Text style={[styles.pinnedQuoteAuthor, { color: colors.mutedForeground }]}>
-            — {pinnedQuote.author}
-          </Text>
-        </Animated.View>
-
         {/* Hero card with flame */}
         <Animated.View
           entering={FadeInDown.duration(500).delay(100)}
@@ -291,6 +269,28 @@ export default function StreakScreen() {
               {prayedToday ? "Prayed today" : "Pray today to keep it going"}
             </Text>
           </View>
+        </Animated.View>
+
+        {/* Pinned habit quote */}
+        <Animated.View
+          entering={FadeInDown.duration(500).delay(150)}
+          style={[
+            styles.pinnedQuoteCard,
+            { backgroundColor: colors.card, borderColor: gold + "55" },
+          ]}
+        >
+          <View style={styles.pinnedQuoteHeader}>
+            <Ionicons name="bookmark" size={14} color={gold} />
+            <Text style={[styles.pinnedQuoteLabel, { color: gold }]}>
+              On Habit
+            </Text>
+          </View>
+          <Text style={[styles.pinnedQuoteText, { color: colors.foreground }]}>
+            "{pinnedQuote.text}"
+          </Text>
+          <Text style={[styles.pinnedQuoteAuthor, { color: colors.mutedForeground }]}>
+            — {pinnedQuote.author}
+          </Text>
         </Animated.View>
 
         {/* Stats row */}
