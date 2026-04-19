@@ -1,3 +1,5 @@
+import { Logo } from "@/components/Logo";
+import { VideoBackground } from "@/components/VideoBackground";
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
 import { Feather, Ionicons } from "@expo/vector-icons";
@@ -64,20 +66,54 @@ export default function StreakScreen() {
     return set;
   }, [streak, lastPrayedDate]);
 
-  // Calendar month state
-  const [viewMonth, setViewMonth] = useState(today.getMonth());
-  const [viewYear, setViewYear] = useState(today.getFullYear());
+  // Calendar state
+  const [calMode, setCalMode] = useState<"week" | "month">("week");
+  // Anchor date — for week mode points to any day in the visible week,
+  // for month mode points to any day in the visible month.
+  const [anchor, setAnchor] = useState<Date>(() => new Date());
 
-  const calendarCells = useMemo(() => {
-    const firstDay = new Date(viewYear, viewMonth, 1).getDay();
-    const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+  const monthCells = useMemo(() => {
+    const y = anchor.getFullYear();
+    const m = anchor.getMonth();
+    const firstDay = new Date(y, m, 1).getDay();
+    const daysInMonth = new Date(y, m + 1, 0).getDate();
     const cells: Array<{ day: number | null; date: Date | null }> = [];
     for (let i = 0; i < firstDay; i++) cells.push({ day: null, date: null });
     for (let d = 1; d <= daysInMonth; d++) {
-      cells.push({ day: d, date: new Date(viewYear, viewMonth, d) });
+      cells.push({ day: d, date: new Date(y, m, d) });
     }
     return cells;
-  }, [viewMonth, viewYear]);
+  }, [anchor]);
+
+  const weekCells = useMemo(() => {
+    const start = new Date(anchor);
+    start.setDate(anchor.getDate() - anchor.getDay()); // Sunday
+    const cells: Array<{ day: number | null; date: Date | null }> = [];
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(start);
+      d.setDate(start.getDate() + i);
+      cells.push({ day: d.getDate(), date: d });
+    }
+    return cells;
+  }, [anchor]);
+
+  const calendarCells = calMode === "week" ? weekCells : monthCells;
+
+  const calHeaderLabel = useMemo(() => {
+    if (calMode === "month") {
+      return `${MONTHS[anchor.getMonth()]} ${anchor.getFullYear()}`;
+    }
+    const start = new Date(anchor);
+    start.setDate(anchor.getDate() - anchor.getDay());
+    const end = new Date(start);
+    end.setDate(start.getDate() + 6);
+    const sameMonth = start.getMonth() === end.getMonth();
+    const startLabel = `${MONTHS[start.getMonth()].slice(0, 3)} ${start.getDate()}`;
+    const endLabel = sameMonth
+      ? `${end.getDate()}`
+      : `${MONTHS[end.getMonth()].slice(0, 3)} ${end.getDate()}`;
+    return `${startLabel} – ${endLabel}`;
+  }, [calMode, anchor]);
 
   // Flame pulse
   const pulse = useSharedValue(1);
@@ -105,19 +141,23 @@ export default function StreakScreen() {
     }
   };
 
-  const goPrevMonth = () => {
+  const goPrev = () => {
     Haptics.selectionAsync();
-    if (viewMonth === 0) {
-      setViewMonth(11);
-      setViewYear(viewYear - 1);
-    } else setViewMonth(viewMonth - 1);
+    const next = new Date(anchor);
+    if (calMode === "week") next.setDate(anchor.getDate() - 7);
+    else next.setMonth(anchor.getMonth() - 1);
+    setAnchor(next);
   };
-  const goNextMonth = () => {
+  const goNext = () => {
     Haptics.selectionAsync();
-    if (viewMonth === 11) {
-      setViewMonth(0);
-      setViewYear(viewYear + 1);
-    } else setViewMonth(viewMonth + 1);
+    const next = new Date(anchor);
+    if (calMode === "week") next.setDate(anchor.getDate() + 7);
+    else next.setMonth(anchor.getMonth() + 1);
+    setAnchor(next);
+  };
+  const toggleMode = () => {
+    Haptics.selectionAsync();
+    setCalMode(calMode === "week" ? "month" : "week");
   };
 
   const gold = colors.goldGlow ?? "#D4A843";
@@ -125,6 +165,25 @@ export default function StreakScreen() {
 
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
+      {/* Background video — fades into the cream background */}
+      <View style={[styles.videoLayer, { height: topInset + 280 }]}>
+        <VideoBackground
+          source={require("@/assets/videos/walking-group.mp4")}
+          webUrl="/videos/walking-group.mp4"
+          style={StyleSheet.absoluteFillObject}
+        />
+        <LinearGradient
+          colors={[
+            "rgba(10,10,20,0.45)",
+            "rgba(10,10,20,0.18)",
+            "rgba(251,247,240,0.15)",
+            colors.background,
+          ]}
+          locations={[0, 0.45, 0.78, 1]}
+          style={StyleSheet.absoluteFillObject}
+        />
+      </View>
+
       <ScrollView
         style={styles.container}
         contentContainerStyle={[
@@ -133,12 +192,17 @@ export default function StreakScreen() {
         ]}
         showsVerticalScrollIndicator={false}
       >
+        {/* Logo */}
+        <Animated.View entering={FadeInDown.duration(400)} style={styles.logoRow}>
+          <Logo size={28} color="#FFFFFF" />
+        </Animated.View>
+
         {/* Header */}
-        <Animated.View entering={FadeInDown.duration(400)} style={styles.header}>
-          <Text style={[styles.eyebrow, { color: colors.mutedForeground }]}>
+        <Animated.View entering={FadeInDown.duration(400).delay(50)} style={styles.header}>
+          <Text style={[styles.eyebrow, { color: "rgba(255,255,255,0.85)" }]}>
             YOUR JOURNEY
           </Text>
-          <Text style={[styles.title, { color: colors.foreground }]}>
+          <Text style={[styles.title, { color: "#FFFFFF" }]}>
             Streak
           </Text>
         </Animated.View>
@@ -227,16 +291,27 @@ export default function StreakScreen() {
           ]}
         >
           <View style={styles.calHeader}>
-            <TouchableOpacity onPress={goPrevMonth} style={styles.calArrow}>
+            <TouchableOpacity onPress={goPrev} style={styles.calArrow}>
               <Feather name="chevron-left" size={20} color={colors.foreground} />
             </TouchableOpacity>
             <Text style={[styles.calTitle, { color: colors.foreground }]}>
-              {MONTHS[viewMonth]} {viewYear}
+              {calHeaderLabel}
             </Text>
-            <TouchableOpacity onPress={goNextMonth} style={styles.calArrow}>
+            <TouchableOpacity onPress={goNext} style={styles.calArrow}>
               <Feather name="chevron-right" size={20} color={colors.foreground} />
             </TouchableOpacity>
           </View>
+
+          {/* Soft week/month toggle */}
+          <TouchableOpacity
+            onPress={toggleMode}
+            activeOpacity={0.7}
+            style={styles.calModeToggle}
+          >
+            <Text style={[styles.calModeText, { color: colors.mutedForeground }]}>
+              {calMode === "week" ? "Show month" : "Show week"}
+            </Text>
+          </TouchableOpacity>
 
           <View style={styles.calDayLetters}>
             {DAY_LETTERS.map((d, i) => (
@@ -418,7 +493,30 @@ const styles = StyleSheet.create({
   root: { flex: 1 },
   container: { flex: 1 },
   content: { paddingHorizontal: 20 },
+  videoLayer: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    overflow: "hidden",
+  },
+  logoRow: {
+    marginBottom: 14,
+  },
   header: { marginBottom: 16 },
+  calModeToggle: {
+    alignSelf: "center",
+    marginTop: 10,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+  },
+  calModeText: {
+    fontSize: 11,
+    fontFamily: "Inter_500Medium",
+    letterSpacing: 0.4,
+    textDecorationLine: "underline",
+    opacity: 0.7,
+  },
   eyebrow: {
     fontSize: 11,
     fontFamily: "Inter_600SemiBold",
