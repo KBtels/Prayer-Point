@@ -1,7 +1,9 @@
+import { VideoBackground } from "@/components/VideoBackground";
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
+import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import {
@@ -133,6 +135,15 @@ export default function PrayScreen() {
           { backgroundColor: colors.prayerBg ?? "#0A0A14" },
         ]}
       >
+        <VideoBackground
+          source={require("@/assets/videos/candle.mp4")}
+          webUrl="/videos/candle.mp4"
+          style={StyleSheet.absoluteFillObject}
+        />
+        <LinearGradient
+          colors={["rgba(10,10,20,0.75)", "rgba(10,10,20,0.55)", "rgba(10,10,20,0.85)"]}
+          style={StyleSheet.absoluteFillObject}
+        />
         <TouchableOpacity
           style={[styles.closeBtn, { top: topInset + 16 }]}
           onPress={() => router.back()}

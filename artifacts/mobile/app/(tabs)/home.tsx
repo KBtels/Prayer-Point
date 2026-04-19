@@ -1,6 +1,8 @@
+import { VideoBackground } from "@/components/VideoBackground";
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
 import { Feather, Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import React from "react";
 import {
@@ -39,26 +41,46 @@ export default function HomeScreen() {
       style={[styles.container, { backgroundColor: colors.background }]}
       contentContainerStyle={[
         styles.content,
-        { paddingTop: topInset + 24, paddingBottom: bottomInset + 100 },
+        { paddingBottom: bottomInset + 100 },
       ]}
       showsVerticalScrollIndicator={false}
     >
-      <Animated.View entering={FadeInDown.duration(500)} style={styles.header}>
-        <View>
-          <Text style={[styles.greeting, { color: colors.mutedForeground }]}>
-            Good {getTimeOfDay()}
-          </Text>
-          <Text style={[styles.name, { color: colors.foreground }]}>
-            {name || "Friend"}
-          </Text>
-        </View>
-        <TouchableOpacity
-          onPress={() => router.push("/settings")}
-          style={[styles.settingsBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
+      <View style={styles.hero}>
+        <VideoBackground
+          source={require("@/assets/videos/church-white.mp4")}
+          webUrl="/videos/church-white.mp4"
+          style={StyleSheet.absoluteFillObject}
+        />
+        <LinearGradient
+          colors={["rgba(10,10,20,0.25)", "rgba(10,10,20,0.05)", "rgba(251,247,240,0)", colors.background]}
+          locations={[0, 0.4, 0.75, 1]}
+          style={StyleSheet.absoluteFillObject}
+        />
+        <Animated.View
+          entering={FadeInDown.duration(500)}
+          style={[styles.header, { paddingTop: topInset + 16 }]}
         >
-          <Feather name="user" size={20} color={colors.foreground} />
-        </TouchableOpacity>
-      </Animated.View>
+          <View>
+            <Text style={[styles.greeting, { color: "rgba(255,255,255,0.85)" }]}>
+              Good {getTimeOfDay()}
+            </Text>
+            <Text style={[styles.name, { color: "#FFFFFF" }]}>
+              {name || "Friend"}
+            </Text>
+          </View>
+          <TouchableOpacity
+            onPress={() => router.push("/settings")}
+            style={[
+              styles.settingsBtn,
+              { backgroundColor: "rgba(255,255,255,0.18)", borderColor: "rgba(255,255,255,0.3)" },
+            ]}
+          >
+            <Feather name="user" size={20} color="#FFFFFF" />
+          </TouchableOpacity>
+        </Animated.View>
+      </View>
+
+      <View style={styles.body}>
 
       <Animated.View
         entering={FadeInDown.duration(500).delay(100)}
@@ -182,6 +204,7 @@ export default function HomeScreen() {
           </Text>
         </TouchableOpacity>
       </Animated.View>
+      </View>
     </ScrollView>
   );
 }
@@ -195,12 +218,22 @@ function getTimeOfDay() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  content: { paddingHorizontal: 24 },
+  content: {},
+  hero: {
+    height: 280,
+    marginBottom: 16,
+    overflow: "hidden",
+    position: "relative",
+  },
+  body: {
+    paddingHorizontal: 24,
+  },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
-    marginBottom: 28,
+    paddingHorizontal: 24,
+    paddingBottom: 24,
   },
   greeting: {
     fontSize: 14,
