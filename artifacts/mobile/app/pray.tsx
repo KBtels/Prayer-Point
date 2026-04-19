@@ -8,6 +8,7 @@ import { router } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import {
   Dimensions,
+  KeyboardAvoidingView,
   Platform,
   Pressable,
   ScrollView,
@@ -341,12 +342,18 @@ export default function PrayScreen() {
         <View style={{ width: 28 }} />
       </View>
 
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
+      >
       <ScrollView
         contentContainerStyle={[
           styles.selectContent,
           { paddingBottom: bottomInset + 40 },
         ]}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
         <Animated.Text
           entering={FadeInDown.duration(400)}
@@ -447,6 +454,7 @@ export default function PrayScreen() {
           </Animated.View>
         )}
       </ScrollView>
+      </KeyboardAvoidingView>
     </View>
   );
 }
