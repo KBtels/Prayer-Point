@@ -1,11 +1,13 @@
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
+import { useSubscription } from "@/lib/revenuecat";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
+  ActivityIndicator,
   Platform,
   ScrollView,
   StyleSheet,
@@ -15,27 +17,42 @@ import {
 } from "react-native";
 import Animated, { FadeIn, FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import type { PurchasesPackage } from "react-native-purchases";
 
-type Tier = {
-  id: string;
+type TierMeta = {
+  packageIdentifier: string;
   label: string;
-  price: string;
   caption?: string;
   highlight?: boolean;
 };
 
-const TIERS: Tier[] = [
-  { id: "trial", label: "Free Trial", price: "1 week", caption: "Full access, no charge" },
-  { id: "3w", label: "3 Weeks", price: "R37" },
-  { id: "1m", label: "1 Month", price: "R55" },
-  { id: "1y", label: "1 Year", price: "R630", caption: "Best value", highlight: true },
+const TIER_META: TierMeta[] = [
+  { packageIdentifier: "$rc_weekly", label: "Weekly" },
+  { packageIdentifier: "$rc_monthly", label: "Monthly" },
+  { packageIdentifier: "$rc_annual", label: "Annual", caption: "Best value", highlight: true },
 ];
 
 export default function SubscribeScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { setSubscription } = useApp();
-  const [selected, setSelected] = useState<string>("trial");
+  const { currentOffering, purchase, restore, isPurchasing, isRestoring, isLoading } =
+    useSubscription();
+
+  const tiers = useMemo(() => {
+    const packages = currentOffering?.availablePackages ?? [];
+    return TIER_META
+      .map((meta) => {
+        const pkg = packages.find((p) => p.identifier === meta.packageIdentifier);
+        if (!pkg) return null;
+        return { ...meta, pkg };
+      })
+      .filter((t): t is TierMeta & { pkg: PurchasesPackage } => t !== null);
+  }, [currentOffering]);
+
+  const [selectedId, setSelectedId] = useState<string>(
+    tiers.find((t) => t.highlight)?.packageIdentifier ?? tiers[0]?.packageIdentifier ?? "",
+  );
 
   const topInset = Platform.OS === "web" ? 24 : insets.top;
   const bottomInset = Platform.OS === "web" ? 24 : insets.bottom;
@@ -43,13 +60,32 @@ export default function SubscribeScreen() {
 
   const handleSelect = (id: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setSelected(id);
+    setSelectedId(id);
   };
 
-  const handleStart = () => {
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    setSubscription(selected);
-    router.back();
+  const handleStart = async () => {
+    const tier = tiers.find((t) => t.packageIdentifier === selectedId);
+    if (!tier) return;
+    try {
+      await purchase(tier.pkg);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setSubscription(tier.pkg.product.identifier);
+      router.back();
+    } catch (err: any) {
+      if (!err?.userCancelled) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        console.error("Purchase failed", err);
+      }
+    }
+  };
+
+  const handleRestore = async () => {
+    Haptics.selectionAsync();
+    try {
+      await restore();
+    } catch (err) {
+      console.error("Restore failed", err);
+    }
   };
 
   const handleLater = () => {
@@ -57,7 +93,7 @@ export default function SubscribeScreen() {
     router.back();
   };
 
-  const ctaLabel = selected === "trial" ? "Start Free Trial" : "Continue";
+  const ctaLabel = isPurchasing ? "Processing..." : "Continue";
 
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
@@ -100,80 +136,106 @@ export default function SubscribeScreen() {
           Choose how you'd like to keep going — at your own pace.
         </Animated.Text>
 
-        <View style={styles.tiers}>
-          {TIERS.map((tier, i) => {
-            const isSelected = selected === tier.id;
-            return (
-              <Animated.View
-                key={tier.id}
-                entering={FadeInDown.duration(450).delay(220 + i * 70)}
-              >
-                <TouchableOpacity
-                  activeOpacity={0.85}
-                  onPress={() => handleSelect(tier.id)}
-                  style={[
-                    styles.tier,
-                    {
-                      backgroundColor: colors.card,
-                      borderColor: isSelected ? gold : colors.border,
-                      borderWidth: isSelected ? 2 : 1,
-                    },
-                  ]}
+        {isLoading ? (
+          <View style={styles.loadingWrap}>
+            <ActivityIndicator color={gold} />
+          </View>
+        ) : tiers.length === 0 ? (
+          <View style={styles.loadingWrap}>
+            <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>
+              Plans are temporarily unavailable. Please try again shortly.
+            </Text>
+          </View>
+        ) : (
+          <View style={styles.tiers}>
+            {tiers.map((tier, i) => {
+              const isSelected = selectedId === tier.packageIdentifier;
+              const priceString = tier.pkg.product.priceString;
+              return (
+                <Animated.View
+                  key={tier.packageIdentifier}
+                  entering={FadeInDown.duration(450).delay(220 + i * 70)}
                 >
-                  {tier.highlight && (
-                    <LinearGradient
-                      colors={[gold + "18", "transparent"]}
-                      style={StyleSheet.absoluteFillObject}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                    />
-                  )}
-                  <View style={styles.tierLeft}>
-                    <View
-                      style={[
-                        styles.radio,
-                        {
-                          borderColor: isSelected ? gold : colors.border,
-                          backgroundColor: isSelected ? gold : "transparent",
-                        },
-                      ]}
-                    >
-                      {isSelected && (
-                        <Ionicons name="checkmark" size={14} color="#0A0A14" />
-                      )}
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={[styles.tierLabel, { color: colors.foreground }]}>
-                        {tier.label}
-                      </Text>
-                      {tier.caption && (
-                        <Text
-                          style={[
-                            styles.tierCaption,
-                            { color: tier.highlight ? gold : colors.mutedForeground },
-                          ]}
-                        >
-                          {tier.caption}
+                  <TouchableOpacity
+                    activeOpacity={0.85}
+                    onPress={() => handleSelect(tier.packageIdentifier)}
+                    style={[
+                      styles.tier,
+                      {
+                        backgroundColor: colors.card,
+                        borderColor: isSelected ? gold : colors.border,
+                        borderWidth: isSelected ? 2 : 1,
+                      },
+                    ]}
+                  >
+                    {tier.highlight && (
+                      <LinearGradient
+                        colors={[gold + "18", "transparent"]}
+                        style={StyleSheet.absoluteFillObject}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                      />
+                    )}
+                    <View style={styles.tierLeft}>
+                      <View
+                        style={[
+                          styles.radio,
+                          {
+                            borderColor: isSelected ? gold : colors.border,
+                            backgroundColor: isSelected ? gold : "transparent",
+                          },
+                        ]}
+                      >
+                        {isSelected && (
+                          <Ionicons name="checkmark" size={14} color="#0A0A14" />
+                        )}
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={[styles.tierLabel, { color: colors.foreground }]}>
+                          {tier.label}
                         </Text>
-                      )}
+                        {tier.caption && (
+                          <Text
+                            style={[
+                              styles.tierCaption,
+                              { color: tier.highlight ? gold : colors.mutedForeground },
+                            ]}
+                          >
+                            {tier.caption}
+                          </Text>
+                        )}
+                      </View>
                     </View>
-                  </View>
-                  <Text style={[styles.tierPrice, { color: colors.foreground }]}>
-                    {tier.price}
-                  </Text>
-                </TouchableOpacity>
-              </Animated.View>
-            );
-          })}
-        </View>
+                    <Text style={[styles.tierPrice, { color: colors.foreground }]}>
+                      {priceString}
+                    </Text>
+                  </TouchableOpacity>
+                </Animated.View>
+              );
+            })}
+          </View>
+        )}
 
         <Animated.View entering={FadeIn.duration(500).delay(620)}>
           <TouchableOpacity
             onPress={handleStart}
             activeOpacity={0.9}
-            style={[styles.cta, { backgroundColor: gold }]}
+            disabled={isPurchasing || tiers.length === 0}
+            style={[
+              styles.cta,
+              {
+                backgroundColor: gold,
+                opacity: isPurchasing || tiers.length === 0 ? 0.6 : 1,
+              },
+            ]}
           >
             <Text style={[styles.ctaText, { color: "#0A0A14" }]}>{ctaLabel}</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity onPress={handleRestore} disabled={isRestoring} style={styles.restoreBtn}>
+            <Text style={[styles.restoreText, { color: gold }]}>
+              {isRestoring ? "Restoring..." : "Restore purchases"}
+            </Text>
           </TouchableOpacity>
 
           <TouchableOpacity onPress={handleLater} style={styles.laterBtn}>
@@ -183,7 +245,7 @@ export default function SubscribeScreen() {
           </TouchableOpacity>
 
           <Text style={[styles.disclaimer, { color: colors.mutedForeground }]}>
-            Cancel anytime. No charges during your trial.
+            Cancel anytime in your App Store or Google Play account.
           </Text>
         </Animated.View>
       </ScrollView>
@@ -223,6 +285,7 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     marginBottom: 28,
   },
+  loadingWrap: { paddingVertical: 28, alignItems: "center" },
   tiers: { gap: 12, marginBottom: 28 },
   tier: {
     borderRadius: 16,
@@ -271,8 +334,16 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_600SemiBold",
     letterSpacing: 0.5,
   },
+  restoreBtn: {
+    paddingVertical: 12,
+    alignItems: "center",
+  },
+  restoreText: {
+    fontSize: 13,
+    fontFamily: "Inter_500Medium",
+  },
   laterBtn: {
-    paddingVertical: 14,
+    paddingVertical: 8,
     alignItems: "center",
   },
   laterText: {
