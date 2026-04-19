@@ -1,5 +1,6 @@
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
+import { generatePrayer } from "@/constants/prayers";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
@@ -42,31 +43,6 @@ const CATEGORIES = [
   "Long trip",
 ];
 
-const PRAYERS: Record<string, string> = {
-  Beginner:
-    "Lord, I come before You humbly. I am still learning to speak with You. Teach me to know You more, to trust in Your love, and to lean on You through every step of this journey. Amen.",
-  Enlightenment:
-    "Father, open the eyes of my heart. Let Your truth illuminate every dark corner of my understanding. Fill me with wisdom that comes from You alone. Amen.",
-  Gratitude:
-    "Lord, thank You. For life, for breath, for grace that never runs out. My heart overflows with gratitude for who You are and what You do. Amen.",
-  Peace:
-    "Prince of Peace, still the storms within me. Let Your presence be my calm in every chaos. I rest in You. Amen.",
-  Stress:
-    "Lord, I bring You this burden. I cannot carry it alone. Take it from me and replace my worry with Your peace that passes all understanding. Amen.",
-  Anxiety:
-    "Father, I am anxious. My heart races. But I know You are near. Help me breathe, help me trust, help me rest in Your perfect love that casts out all fear. Amen.",
-  Uncertainty:
-    "God, I do not know what lies ahead. But You do. Lead me step by step, and help me trust Your plan even when I cannot see it. Amen.",
-  "Test results":
-    "Lord, I await an outcome that is in Your hands. Whatever the result, remind me that my worth is found in You, not in any score or verdict. Amen.",
-  "School day":
-    "Father, as I begin this day of learning, sharpen my mind, steady my focus, and remind me that all wisdom flows from You. Amen.",
-  "New week":
-    "Lord, a new week stretches before me. Help me to honor You in every task, every conversation, and every quiet moment. Amen.",
-  "Long trip":
-    "Heavenly Father, I entrust this journey to You. Be my guide on the road, my peace in every mile, and my rest at journey's end. Amen.",
-};
-
 type PrayStep = "select" | "praying" | "complete";
 
 const { width } = Dimensions.get("window");
@@ -74,10 +50,11 @@ const { width } = Dimensions.get("window");
 export default function PrayScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { recordPrayer } = useApp();
+  const { recordPrayer, name } = useApp();
   const [step, setStep] = useState<PrayStep>("select");
   const [selected, setSelected] = useState<string[]>([]);
   const [amenReady, setAmenReady] = useState(false);
+  const [sessionSeed, setSessionSeed] = useState<number>(() => Date.now());
 
   const pulse = useSharedValue(1);
   const light = useSharedValue(0);
@@ -100,7 +77,7 @@ export default function PrayScreen() {
           duration: 1800,
           easing: Easing.inOut(Easing.cubic),
         });
-      }, 5000);
+      }, 8000);
       return () => clearTimeout(t);
     } else {
       pulse.value = withTiming(1);
@@ -151,6 +128,7 @@ export default function PrayScreen() {
 
   const handlePray = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setSessionSeed(Date.now());
     setStep("praying");
   };
 
@@ -161,9 +139,11 @@ export default function PrayScreen() {
   };
 
   if (step === "praying") {
-    const prayerText =
-      PRAYERS[selected[0]] ||
-      "Lord, I come before You in faith. Hear my heart. Guide my steps. May Your will be done. Amen.";
+    const prayerText = generatePrayer({
+      category: selected[0] ?? "Beginner",
+      userName: name,
+      sessionSeed,
+    });
     const isBreathing =
       selected.includes("Stress") || selected.includes("Anxiety");
 
