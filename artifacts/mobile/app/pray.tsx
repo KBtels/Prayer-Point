@@ -13,6 +13,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -62,6 +63,7 @@ export default function PrayScreen() {
   const { recordPrayer } = useApp();
   const [step, setStep] = useState<PrayStep>("select");
   const [selected, setSelected] = useState<string[]>([]);
+  const [customTopic, setCustomTopic] = useState("");
   const [amenReady, setAmenReady] = useState(false);
   const [sessionSeed, setSessionSeed] = useState<number>(() => Date.now());
 
@@ -150,15 +152,20 @@ export default function PrayScreen() {
     setStep("praying");
   };
 
+  const trimmedCustom = customTopic.trim();
+  const activeTopics = trimmedCustom ? [trimmedCustom, ...selected] : selected;
+  const canPray = activeTopics.length > 0;
+
   const handleAmen = () => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    recordPrayer(selected);
+    recordPrayer(activeTopics);
     setStep("complete");
   };
 
   if (step === "praying") {
     const prayerText = generatePrayer({
       category: selected[0] ?? "Beginner",
+      customTopic: trimmedCustom || undefined,
       sessionSeed,
     });
     const isBreathing =
@@ -220,7 +227,7 @@ export default function PrayScreen() {
             )}
 
             <View style={styles.categoriesBadges}>
-              {selected.map((cat) => (
+              {activeTopics.map((cat) => (
                 <View
                   key={cat}
                   style={[styles.badge, { backgroundColor: colors.goldGlow + "22" ?? "#D4A84322" }]}
@@ -284,7 +291,7 @@ export default function PrayScreen() {
           <Text style={[styles.completeSubtitle, { color: colors.prayerText + "88" ?? "#E8D9B888" }]}>
             You've connected with God about{"\n"}
             <Text style={{ color: colors.goldGlow ?? "#D4A843", fontFamily: "Inter_600SemiBold" }}>
-              {selected[0]}
+              {activeTopics[0]}
             </Text>
             .
           </Text>
@@ -387,7 +394,40 @@ export default function PrayScreen() {
           })}
         </View>
 
-        {selected.length > 0 && (
+        <Animated.View
+          entering={FadeInDown.duration(400).delay(CATEGORIES.length * 40)}
+          style={styles.customWrap}
+        >
+          <Text style={[styles.customLabel, { color: colors.mutedForeground }]}>
+            Or pray about something specific
+          </Text>
+          <View
+            style={[
+              styles.customInputRow,
+              {
+                backgroundColor: colors.card,
+                borderColor: trimmedCustom
+                  ? colors.primary
+                  : colors.border,
+              },
+            ]}
+          >
+            <TextInput
+              value={customTopic}
+              onChangeText={setCustomTopic}
+              placeholder="e.g. my interview today"
+              placeholderTextColor={colors.mutedForeground}
+              maxLength={40}
+              style={[styles.customInput, { color: colors.foreground }]}
+              returnKeyType="done"
+            />
+            <Text style={[styles.customCount, { color: colors.mutedForeground }]}>
+              {customTopic.length}/40
+            </Text>
+          </View>
+        </Animated.View>
+
+        {canPray && (
           <Animated.View entering={FadeInDown.duration(400)}>
             <TouchableOpacity
               style={[styles.prayNowBtn, { backgroundColor: colors.primary }]}
@@ -450,6 +490,34 @@ const styles = StyleSheet.create({
   categoryChipText: {
     fontSize: 14,
     fontFamily: "Inter_500Medium",
+  },
+  customWrap: {
+    marginTop: 4,
+    marginBottom: 24,
+  },
+  customLabel: {
+    fontSize: 13,
+    fontFamily: "Inter_400Regular",
+    marginBottom: 10,
+  },
+  customInputRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1.5,
+    borderRadius: 18,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 10,
+  },
+  customInput: {
+    flex: 1,
+    fontSize: 15,
+    fontFamily: "Inter_400Regular",
+    paddingVertical: 0,
+  },
+  customCount: {
+    fontSize: 11,
+    fontFamily: "Inter_400Regular",
   },
   prayNowBtn: {
     flexDirection: "row",

@@ -246,23 +246,39 @@ function hashString(s: string): number {
 export type PrayerInput = {
   category: string;
   userName?: string;
+  // Optional free-form prayer point typed by the user.
+  // When provided, it is woven into the body of the prayer.
+  customTopic?: string;
   // A unique seed for this prayer session — usually Date.now() so each
   // session feels fresh, but can be a stable string for testing.
   sessionSeed?: string | number;
 };
 
+const CUSTOM_BODIES: string[] = [
+  "Lord, I bring before You {topic}. You see every detail and every weight tied to it. I lay it down at Your feet and ask You to move in ways only You can.",
+  "Father, I am praying about {topic}. Nothing about it is hidden from You. Wrap Your peace around this part of my life and lead me in the right direction.",
+  "God, hear my heart concerning {topic}. Where I feel uncertain, give me clarity. Where I feel weary, give me strength. Where I have lost hope, restore it.",
+  "Holy Spirit, meet me in {topic}. Move where I cannot reach, soften what is hard, and open what feels closed. I trust You to work even when I cannot see the way.",
+  "Lord, I surrender {topic} into Your hands. Take what I cannot carry, redeem what I cannot fix, and shape it for Your good purpose in my life.",
+  "Father, You already know everything about {topic}. I ask for Your wisdom, Your timing, and Your grace. Help me trust You with each step from here.",
+];
+
 export function generatePrayer({
   category,
   userName,
+  customTopic,
   sessionSeed,
 }: PrayerInput): string {
-  const bodies = BODIES[category] ?? FALLBACK_BODY;
+  const cleanTopic = (customTopic ?? "").trim();
+  const bodies = cleanTopic
+    ? CUSTOM_BODIES.map((b) => b.replace("{topic}", cleanTopic))
+    : BODIES[category] ?? FALLBACK_BODY;
   const seedStr =
     String(sessionSeed ?? Date.now()) +
     "|" +
     (userName ?? "") +
     "|" +
-    category;
+    (cleanTopic || category);
   const h = hashString(seedStr);
 
   const opening = OPENINGS[h % OPENINGS.length];
