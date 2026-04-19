@@ -1,3 +1,4 @@
+import { Logo } from "@/components/Logo";
 import { VideoBackground } from "@/components/VideoBackground";
 import { useColors } from "@/hooks/useColors";
 import { LinearGradient } from "expo-linear-gradient";
@@ -69,20 +70,19 @@ export default function IntroScreen() {
         ]}
       >
         <Animated.View entering={FadeIn.duration(1000)} style={styles.topArea}>
-          <View style={[styles.cross, { borderColor: colors.goldGlow ?? "#D4A843" }]}>
-            <View
-              style={[
-                styles.crossV,
-                { backgroundColor: colors.goldGlow ?? "#D4A843" },
-              ]}
-            />
-            <View
-              style={[
-                styles.crossH,
-                { backgroundColor: colors.goldGlow ?? "#D4A843" },
-              ]}
-            />
-          </View>
+          <Logo size={88} color="#FFFFFF" dotColor={colors.goldGlow ?? "#D4A843"} />
+          <Text
+            style={{
+              color: "rgba(255,255,255,0.7)",
+              fontFamily: "Inter_500Medium",
+              fontSize: 13,
+              letterSpacing: 4,
+              marginTop: 8,
+              textTransform: "uppercase",
+            }}
+          >
+            Prayer Point
+          </Text>
         </Animated.View>
 
         <View style={styles.textArea}>
@@ -112,7 +112,7 @@ export default function IntroScreen() {
               activeOpacity={0.8}
             >
               <Text style={[styles.btnText, { color: "#0A0A14" }]}>
-                God First
+                Begin
               </Text>
             </TouchableOpacity>
           </Animated.View>

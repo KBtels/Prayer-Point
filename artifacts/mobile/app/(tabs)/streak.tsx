@@ -97,7 +97,7 @@ export default function StreakScreen() {
 
   const handleInvite = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    const message = `I'm on a ${streak}-day prayer streak with God First 🙏\n\nJoin me — let's grow our faith together.`;
+    const message = `I'm on a ${streak}-day prayer streak with Prayer Point 🙏\n\nJoin me — let's grow our faith together.`;
     try {
       await Share.share({ message });
     } catch {

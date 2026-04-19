@@ -1,3 +1,4 @@
+import { Logo } from "@/components/Logo";
 import { VideoBackground } from "@/components/VideoBackground";
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
@@ -61,11 +62,9 @@ export default function HomeScreen() {
           style={[styles.header, { paddingTop: topInset + 16 }]}
         >
           <View>
-            <Text style={[styles.greeting, { color: "rgba(255,255,255,0.85)" }]}>
-              Good {getTimeOfDay()}
-            </Text>
-            <Text style={[styles.name, { color: "#FFFFFF" }]}>
-              {name || "Friend"}
+            <Logo size={32} color="#FFFFFF" />
+            <Text style={[styles.greeting, { color: "rgba(255,255,255,0.85)", marginTop: 8 }]}>
+              Good {getTimeOfDay()}, {name || "Friend"}
             </Text>
           </View>
           <TouchableOpacity
