@@ -226,6 +226,26 @@ const BODIES: CategoryBodies = {
     "Lord, free me from comparing my life to anyone else's. Their timeline is not mine. Their measure of success is not Yours. Let me run my own race with my eyes on You.",
     "Father, the only expectation I want to live under today is this: that You are good, You are faithful, and You will not fail me. That is enough. Everything else can be held loosely.",
   ],
+  Family: [
+    "Father, I bring my family before You. You knit us together on purpose. Bind us in love, protect us from division, and let Your peace rest over our home.",
+    "Lord, I lift up each member of my family by name in my heart. You know exactly what each one is carrying today. Meet them there with Your grace and care.",
+    "God, where there is tension in my family, soften hearts. Where there is distance, build a bridge. Where there is hurt, begin a healing only You can do.",
+    "Jesus, make our home a place of safety, honesty, and warmth. Let no one walking through our door ever feel like a stranger to Your love.",
+    "Holy Spirit, give me patience with the people I live closest to. Help me to listen more than I speak, and to love them in the small, quiet ways that matter most.",
+    "Father, thank You for the family You have given me — the easy parts and the hard parts. Use even the hard parts to shape us more into the image of Your Son.",
+    "Lord, watch over the ones I love when they are far from me. Where I cannot be present, be present for me. Surround them with Your unseen hand.",
+    "God, let our family be marked by forgiveness. Quick to apologize, quick to forgive, slow to keep score. Teach us the kind of love that covers a multitude of things.",
+  ],
+  Marriage: [
+    "Father, I bring my marriage before You. Thank You for joining us together. Renew our love, deepen our friendship, and keep our hearts soft toward each other.",
+    "Lord, where my spouse and I have grown distant, draw us back. Help us to truly see each other again, beyond the routines, beyond the busyness.",
+    "God, give us the courage to have the honest conversations we have been avoiding. Let truth be spoken in love, and let love be the foundation of every word.",
+    "Jesus, teach me to lay down my rights for the sake of my spouse, the way You laid down everything for us. Make our marriage a quiet picture of Your love.",
+    "Holy Spirit, guard our marriage from anything that would try to divide us — pride, distraction, comparison, resentment. Bind us together in You.",
+    "Father, thank You for the gift of my spouse. Help me never to take them for granted. Show me practical ways today to honor, encourage, and choose them again.",
+    "Lord, in the seasons that feel heavy, remind us that we are on the same team. Strengthen us to fight for our marriage, not against each other.",
+    "God, let our marriage be a place of grace where we are both fully known and fully loved. May our home reflect Your faithfulness to anyone who steps into it.",
+  ],
 };
 
 const FALLBACK_BODY: string[] = [

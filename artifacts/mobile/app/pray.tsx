@@ -52,6 +52,8 @@ const CATEGORIES = [
   "Presentation",
   "Relationship",
   "Expectations",
+  "Family",
+  "Marriage",
 ];
 
 type PrayStep = "select" | "praying" | "complete";
