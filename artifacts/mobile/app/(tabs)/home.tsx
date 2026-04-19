@@ -85,7 +85,7 @@ export default function HomeScreen() {
             </Text>
           </View>
           <TouchableOpacity
-            onPress={() => router.push("/settings")}
+            onPress={() => router.push("/profile")}
             style={[
               styles.settingsBtn,
               { backgroundColor: "rgba(255,255,255,0.18)", borderColor: "rgba(255,255,255,0.3)" },

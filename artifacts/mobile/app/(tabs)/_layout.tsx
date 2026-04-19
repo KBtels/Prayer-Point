@@ -24,6 +24,10 @@ function NativeTabLayout() {
         <Icon sf={{ default: "chart.bar", selected: "chart.bar.fill" }} />
         <Label>Momentum</Label>
       </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="profile">
+        <Icon sf={{ default: "person.crop.circle", selected: "person.crop.circle.fill" }} />
+        <Label>Profile</Label>
+      </NativeTabs.Trigger>
     </NativeTabs>
   );
 }
@@ -99,6 +103,18 @@ function ClassicTabLayout() {
               <SymbolView name="chart.bar" tintColor={color} size={24} />
             ) : (
               <Feather name="bar-chart-2" size={22} color={color} />
+            ),
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: "Profile",
+          tabBarIcon: ({ color }) =>
+            isIOS ? (
+              <SymbolView name="person.crop.circle" tintColor={color} size={24} />
+            ) : (
+              <Feather name="user" size={22} color={color} />
             ),
         }}
       />
