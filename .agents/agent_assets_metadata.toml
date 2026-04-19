@@ -11,3 +11,9 @@ id = "bTxEO16AwZpfF8gMRwQyR"
 uri = "file://exports/prayer-point-source.txt"
 type = "text"
 title = "Prayer Point — Full Source Bundle"
+
+[[outputs]]
+id = "spCEEmkmUrW_JHDr8TToC"
+uri = "file://exports/prayer-point-mobile-source.tar.gz"
+type = "unspecified"
+title = "Prayer Point — Mobile App Source"
