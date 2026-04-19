@@ -269,12 +269,7 @@ export function generatePrayer({
   const middle = bodies[Math.floor(h / 7) % bodies.length];
   const closing = CLOSINGS[Math.floor(h / 53) % CLOSINGS.length];
 
-  // Personalize lightly with the user's name in the opening when available.
-  const personalizedOpening = userName
-    ? opening.replace(/^([A-Za-z ,'-]+?),/, `$1, ${userName.trim()},`)
-    : opening;
-
-  return `${personalizedOpening}\n\n${middle}\n\n${closing}`;
+  return `${opening}\n\n${middle}\n\n${closing}`;
 }
 
 // Approximate count of unique prayers available per category.

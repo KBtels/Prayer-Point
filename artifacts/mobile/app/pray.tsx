@@ -9,6 +9,7 @@ import React, { useEffect, useRef, useState } from "react";
 import {
   Dimensions,
   Platform,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -58,7 +59,7 @@ const { width } = Dimensions.get("window");
 export default function PrayScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { recordPrayer, name } = useApp();
+  const { recordPrayer } = useApp();
   const [step, setStep] = useState<PrayStep>("select");
   const [selected, setSelected] = useState<string[]>([]);
   const [amenReady, setAmenReady] = useState(false);
@@ -79,20 +80,29 @@ export default function PrayScreen() {
       );
       setAmenReady(false);
       light.value = 0;
-      const t = setTimeout(() => {
-        setAmenReady(true);
-        light.value = withTiming(1, {
-          duration: 1800,
-          easing: Easing.inOut(Easing.cubic),
-        });
-      }, 8000);
-      return () => clearTimeout(t);
     } else {
       pulse.value = withTiming(1);
       light.value = 0;
       setAmenReady(false);
     }
   }, [step]);
+
+  const lastTapRef = useRef(0);
+  const handleScreenTap = () => {
+    if (amenReady) return;
+    const now = Date.now();
+    if (now - lastTapRef.current < 350) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      setAmenReady(true);
+      light.value = withTiming(1, {
+        duration: 1800,
+        easing: Easing.inOut(Easing.cubic),
+      });
+      lastTapRef.current = 0;
+    } else {
+      lastTapRef.current = now;
+    }
+  };
 
   const pulseStyle = useAnimatedStyle(() => ({
     transform: [{ scale: pulse.value }],
@@ -149,14 +159,14 @@ export default function PrayScreen() {
   if (step === "praying") {
     const prayerText = generatePrayer({
       category: selected[0] ?? "Beginner",
-      userName: name,
       sessionSeed,
     });
     const isBreathing =
       selected.includes("Stress") || selected.includes("Anxiety");
 
     return (
-      <View
+      <Pressable
+        onPress={handleScreenTap}
         style={[
           styles.prayingContainer,
           { backgroundColor: colors.prayerBg ?? "#0A0A14" },
@@ -165,6 +175,7 @@ export default function PrayScreen() {
         <LinearGradient
           colors={["#0A0A14", "#10101E", "#0A0A14"]}
           style={StyleSheet.absoluteFillObject}
+          pointerEvents="none"
         />
         <Animated.View
           pointerEvents="none"
@@ -220,7 +231,7 @@ export default function PrayScreen() {
             </Animated.Text>
           </ScrollView>
 
-          {amenReady && (
+          {amenReady ? (
             <Animated.View entering={FadeIn.duration(1200)}>
               <TouchableOpacity
                 style={[styles.amenBtn, { borderColor: colors.goldGlow ?? "#D4A843", backgroundColor: colors.goldGlow ?? "#D4A843" }]}
@@ -232,9 +243,16 @@ export default function PrayScreen() {
                 </Text>
               </TouchableOpacity>
             </Animated.View>
+          ) : (
+            <Animated.Text
+              entering={FadeIn.duration(800).delay(600)}
+              style={[styles.tapHint, { color: colors.prayerText + "77" ?? "#E8D9B877" }]}
+            >
+              Double-tap when ready to say Amen
+            </Animated.Text>
           )}
         </Animated.View>
-      </View>
+      </Pressable>
     );
   }
 
@@ -504,6 +522,13 @@ const styles = StyleSheet.create({
     lineHeight: 32,
     textAlign: "center",
     fontStyle: "italic",
+  },
+  tapHint: {
+    marginTop: 32,
+    fontSize: 14,
+    fontWeight: "500",
+    textAlign: "center",
+    letterSpacing: 0.3,
   },
   amenBtn: {
     marginTop: 32,
