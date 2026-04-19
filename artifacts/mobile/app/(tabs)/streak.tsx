@@ -1,10 +1,9 @@
-import { VideoBackground } from "@/components/VideoBackground";
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Platform,
   ScrollView,
@@ -16,67 +15,89 @@ import {
 } from "react-native";
 import Animated, {
   Easing,
-  FadeIn,
   FadeInDown,
   useAnimatedStyle,
   useSharedValue,
-  withDelay,
   withRepeat,
   withSequence,
   withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-const DAYS = ["S", "M", "T", "W", "T", "F", "S"];
+const MONTHS = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
+const DAY_LETTERS = ["S", "M", "T", "W", "T", "F", "S"];
 
 export default function StreakScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { name, streak, totalPrayers, lastPrayedDate, reflections } = useApp();
+  const { streak, totalPrayers, lastPrayedDate, reflections } = useApp();
 
-  const topInset = Platform.OS === "web" ? 67 : insets.top;
+  const topInset = Platform.OS === "web" ? 24 : insets.top;
   const bottomInset = Platform.OS === "web" ? 34 : insets.bottom;
 
   const today = new Date();
-  const dayOfWeek = today.getDay();
   const prayedToday = lastPrayedDate === today.toDateString();
 
-  // Animated counter for big streak number
-  const counter = useSharedValue(0);
-  const flameScale = useSharedValue(1);
-  const flameGlow = useSharedValue(0.6);
+  // Build set of "prayed" dates from streak (most recent N days back from lastPrayedDate)
+  const prayedDates = useMemo(() => {
+    const set = new Set<string>();
+    if (!lastPrayedDate || streak === 0) return set;
+    const last = new Date(lastPrayedDate);
+    for (let i = 0; i < streak; i++) {
+      const d = new Date(last);
+      d.setDate(last.getDate() - i);
+      set.add(d.toDateString());
+    }
+    return set;
+  }, [streak, lastPrayedDate]);
 
+  // Calendar month state
+  const [viewMonth, setViewMonth] = useState(today.getMonth());
+  const [viewYear, setViewYear] = useState(today.getFullYear());
+
+  const calendarCells = useMemo(() => {
+    const firstDay = new Date(viewYear, viewMonth, 1).getDay();
+    const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+    const cells: Array<{ day: number | null; date: Date | null }> = [];
+    for (let i = 0; i < firstDay; i++) cells.push({ day: null, date: null });
+    for (let d = 1; d <= daysInMonth; d++) {
+      cells.push({ day: d, date: new Date(viewYear, viewMonth, d) });
+    }
+    return cells;
+  }, [viewMonth, viewYear]);
+
+  // Flame pulse
+  const pulse = useSharedValue(1);
   useEffect(() => {
-    counter.value = withTiming(streak, {
-      duration: 1400,
-      easing: Easing.out(Easing.cubic),
-    });
-    flameScale.value = withRepeat(
+    pulse.value = withRepeat(
       withSequence(
-        withTiming(1.08, { duration: 1200, easing: Easing.inOut(Easing.quad) }),
-        withTiming(1, { duration: 1200, easing: Easing.inOut(Easing.quad) }),
+        withTiming(1.06, { duration: 1400, easing: Easing.inOut(Easing.quad) }),
+        withTiming(1, { duration: 1400, easing: Easing.inOut(Easing.quad) }),
       ),
       -1,
       false,
     );
-    flameGlow.value = withRepeat(
-      withSequence(
-        withTiming(1, { duration: 1500 }),
-        withTiming(0.5, { duration: 1500 }),
-      ),
-      -1,
-      false,
-    );
-  }, [streak]);
-
-  const flameStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: flameScale.value }],
-    opacity: flameGlow.value,
+  }, []);
+  const pulseStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: pulse.value }],
   }));
 
   const handleInvite = async () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    const message = `I'm on a ${streak}-day prayer streak with God First 🙏\n\nJoin me — let's grow our faith together. Download God First and let's pray as one.`;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const message = `I'm on a ${streak}-day prayer streak with God First 🙏\n\nJoin me — let's grow our faith together.`;
     try {
       await Share.share({ message });
     } catch {
@@ -84,191 +105,211 @@ export default function StreakScreen() {
     }
   };
 
-  return (
-    <View style={[styles.root, { backgroundColor: colors.prayerBg ?? "#0A0A14" }]}>
-      <VideoBackground
-        source={require("@/assets/videos/streak-page.mp4")}
-        webUrl="/videos/streak-page.mp4"
-        style={StyleSheet.absoluteFillObject}
-      />
-      <LinearGradient
-        colors={[
-          "rgba(10,10,20,0.55)",
-          "rgba(10,10,20,0.75)",
-          "rgba(10,10,20,0.92)",
-        ]}
-        style={StyleSheet.absoluteFillObject}
-      />
+  const goPrevMonth = () => {
+    Haptics.selectionAsync();
+    if (viewMonth === 0) {
+      setViewMonth(11);
+      setViewYear(viewYear - 1);
+    } else setViewMonth(viewMonth - 1);
+  };
+  const goNextMonth = () => {
+    Haptics.selectionAsync();
+    if (viewMonth === 11) {
+      setViewMonth(0);
+      setViewYear(viewYear + 1);
+    } else setViewMonth(viewMonth + 1);
+  };
 
+  const gold = colors.goldGlow ?? "#D4A843";
+  const accent = colors.accent ?? "#8B5E2A";
+
+  return (
+    <View style={[styles.root, { backgroundColor: colors.background }]}>
       <ScrollView
         style={styles.container}
         contentContainerStyle={[
           styles.content,
-          { paddingTop: topInset + 24, paddingBottom: bottomInset + 120 },
+          { paddingTop: topInset + 16, paddingBottom: bottomInset + 120 },
         ]}
         showsVerticalScrollIndicator={false}
       >
-        <Animated.View entering={FadeInDown.duration(500)} style={styles.header}>
-          <Text style={[styles.eyebrow, { color: colors.goldGlow ?? "#D4A843" }]}>
+        {/* Header */}
+        <Animated.View entering={FadeInDown.duration(400)} style={styles.header}>
+          <Text style={[styles.eyebrow, { color: colors.mutedForeground }]}>
             YOUR JOURNEY
           </Text>
-          <Text style={[styles.title, { color: "#FFFFFF" }]}>
+          <Text style={[styles.title, { color: colors.foreground }]}>
             Streak
           </Text>
         </Animated.View>
 
-        {/* Big animated streak number */}
+        {/* Hero card with flame */}
         <Animated.View
-          entering={FadeIn.duration(700).delay(200)}
-          style={styles.heroNumberWrap}
+          entering={FadeInDown.duration(500).delay(100)}
+          style={[
+            styles.heroCard,
+            {
+              backgroundColor: colors.card,
+              borderColor: colors.border,
+            },
+          ]}
         >
-          <Animated.View style={[styles.flameGlow, flameStyle]}>
-            <View
-              style={[
-                styles.flameGlowInner,
-                { backgroundColor: (colors.goldGlow ?? "#D4A843") + "33" },
-              ]}
-            />
+          <LinearGradient
+            colors={[gold + "18", "transparent"]}
+            style={StyleSheet.absoluteFillObject}
+            start={{ x: 0.5, y: 0 }}
+            end={{ x: 0.5, y: 1 }}
+          />
+          <Animated.View style={[styles.flameWrap, pulseStyle]}>
+            <View style={[styles.flameRing, { backgroundColor: gold + "1A" }]}>
+              <View style={[styles.flameRingInner, { backgroundColor: gold + "33" }]}>
+                <Ionicons name="flame" size={42} color={gold} />
+              </View>
+            </View>
           </Animated.View>
 
-          <View style={styles.numberRow}>
-            <CountUp value={streak} color={colors.goldGlow ?? "#D4A843"} />
-            <Ionicons
-              name="flame"
-              size={48}
-              color={colors.goldGlow ?? "#D4A843"}
-              style={{ marginLeft: 8 }}
-            />
-          </View>
-          <Text style={[styles.heroLabel, { color: "rgba(255,255,255,0.75)" }]}>
+          <Text style={[styles.heroNumber, { color: colors.foreground }]}>
+            {streak}
+          </Text>
+          <Text style={[styles.heroLabel, { color: colors.mutedForeground }]}>
             day{streak === 1 ? "" : "s"} in a row
           </Text>
+
+          <View
+            style={[
+              styles.prayedPill,
+              {
+                backgroundColor: prayedToday ? gold + "22" : colors.muted,
+                borderColor: prayedToday ? gold + "55" : colors.border,
+              },
+            ]}
+          >
+            <Ionicons
+              name={prayedToday ? "checkmark-circle" : "time-outline"}
+              size={14}
+              color={prayedToday ? accent : colors.mutedForeground}
+            />
+            <Text
+              style={[
+                styles.prayedPillText,
+                { color: prayedToday ? accent : colors.mutedForeground },
+              ]}
+            >
+              {prayedToday ? "Prayed today" : "Pray today to keep it going"}
+            </Text>
+          </View>
         </Animated.View>
 
-        {/* Week dots */}
-        <Animated.View
-          entering={FadeInDown.duration(500).delay(400)}
-          style={styles.weekRow}
-        >
-          {DAYS.map((d, i) => {
-            const isToday = i === dayOfWeek;
-            const isPast = i < dayOfWeek;
-            const filled =
-              (isToday && prayedToday) ||
-              (isPast && streak > dayOfWeek - i);
-            return (
-              <View key={i} style={styles.dayCol}>
-                <Text style={[styles.dayLetter, { color: "rgba(255,255,255,0.6)" }]}>
-                  {d}
-                </Text>
-                <View
-                  style={[
-                    styles.dayDot,
-                    {
-                      backgroundColor: filled
-                        ? colors.goldGlow ?? "#D4A843"
-                        : "transparent",
-                      borderColor: isToday
-                        ? colors.goldGlow ?? "#D4A843"
-                        : "rgba(255,255,255,0.25)",
-                    },
-                  ]}
-                >
-                  {filled && (
-                    <Ionicons name="checkmark" size={14} color="#0A0A14" />
-                  )}
-                </View>
-              </View>
-            );
-          })}
-        </Animated.View>
-
-        {/* Stats grid */}
-        <View style={styles.statsGrid}>
+        {/* Stats row */}
+        <View style={styles.statsRow}>
           <StatCard
-            delay={500}
+            delay={200}
             icon="heart"
             label="Total prayers"
             value={totalPrayers}
-            color={colors.goldGlow ?? "#D4A843"}
+            colors={colors}
           />
           <StatCard
-            delay={600}
+            delay={250}
             icon="book-open"
             label="Reflections"
             value={reflections.length}
-            color={colors.goldGlow ?? "#D4A843"}
+            colors={colors}
           />
         </View>
 
-        {/* Invite hero card */}
+        {/* Calendar history */}
         <Animated.View
-          entering={FadeInDown.duration(600).delay(700)}
+          entering={FadeInDown.duration(500).delay(300)}
           style={[
-            styles.inviteCard,
-            { backgroundColor: "rgba(212,168,67,0.12)", borderColor: (colors.goldGlow ?? "#D4A843") + "55" },
+            styles.section,
+            { backgroundColor: colors.card, borderColor: colors.border },
           ]}
         >
-          <View style={styles.inviteHeader}>
-            <View
-              style={[
-                styles.inviteIconWrap,
-                { backgroundColor: (colors.goldGlow ?? "#D4A843") + "22" },
-              ]}
-            >
-              <Ionicons name="people" size={26} color={colors.goldGlow ?? "#D4A843"} />
-            </View>
-            <Text style={[styles.inviteTitle, { color: "#FFFFFF" }]}>
-              Pray together
+          <View style={styles.calHeader}>
+            <TouchableOpacity onPress={goPrevMonth} style={styles.calArrow}>
+              <Feather name="chevron-left" size={20} color={colors.foreground} />
+            </TouchableOpacity>
+            <Text style={[styles.calTitle, { color: colors.foreground }]}>
+              {MONTHS[viewMonth]} {viewYear}
             </Text>
+            <TouchableOpacity onPress={goNextMonth} style={styles.calArrow}>
+              <Feather name="chevron-right" size={20} color={colors.foreground} />
+            </TouchableOpacity>
           </View>
 
-          <Text style={[styles.inviteText, { color: "rgba(255,255,255,0.85)" }]}>
-            Faith grows when shared. Invite a friend or loved one to walk this
-            journey with you — every streak is stronger together.
-          </Text>
-
-          <View style={styles.inviteStatsRow}>
-            <View style={styles.inviteStatCol}>
-              <Text style={[styles.inviteStatNum, { color: colors.goldGlow ?? "#D4A843" }]}>
-                {streak}
+          <View style={styles.calDayLetters}>
+            {DAY_LETTERS.map((d, i) => (
+              <Text
+                key={i}
+                style={[styles.calDayLetter, { color: colors.mutedForeground }]}
+              >
+                {d}
               </Text>
-              <Text style={[styles.inviteStatLabel, { color: "rgba(255,255,255,0.6)" }]}>
-                Your streak
-              </Text>
-            </View>
-            <View style={styles.inviteDivider} />
-            <View style={styles.inviteStatCol}>
-              <Text style={[styles.inviteStatNum, { color: colors.goldGlow ?? "#D4A843" }]}>
-                0
-              </Text>
-              <Text style={[styles.inviteStatLabel, { color: "rgba(255,255,255,0.6)" }]}>
-                Friends invited
-              </Text>
-            </View>
+            ))}
           </View>
 
-          <TouchableOpacity
-            style={[styles.inviteBtn, { backgroundColor: colors.goldGlow ?? "#D4A843" }]}
-            onPress={handleInvite}
-            activeOpacity={0.85}
-          >
-            <Feather name="user-plus" size={18} color="#0A0A14" />
-            <Text style={styles.inviteBtnText}>Invite a loved one</Text>
-          </TouchableOpacity>
-
-          <Text style={[styles.inviteFootnote, { color: "rgba(255,255,255,0.5)" }]}>
-            "Where two or three gather in my name, there am I with them." — Matthew 18:20
-          </Text>
+          <View style={styles.calGrid}>
+            {calendarCells.map((cell, i) => {
+              if (!cell.day) return <View key={i} style={styles.calCell} />;
+              const isFuture = cell.date! > today;
+              const isToday =
+                cell.date!.toDateString() === today.toDateString();
+              const wasPrayed = prayedDates.has(cell.date!.toDateString());
+              return (
+                <View key={i} style={styles.calCell}>
+                  <View
+                    style={[
+                      styles.calDot,
+                      {
+                        backgroundColor: wasPrayed ? gold : "transparent",
+                        borderColor: isToday
+                          ? gold
+                          : wasPrayed
+                            ? gold
+                            : "transparent",
+                        borderWidth: isToday ? 1.5 : 0,
+                        opacity: isFuture ? 0.3 : 1,
+                      },
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.calDayNum,
+                        {
+                          color: wasPrayed
+                            ? "#FFFFFF"
+                            : isToday
+                              ? accent
+                              : colors.foreground,
+                          fontFamily: isToday
+                            ? "Inter_700Bold"
+                            : "Inter_500Medium",
+                        },
+                      ]}
+                    >
+                      {cell.day}
+                    </Text>
+                  </View>
+                </View>
+              );
+            })}
+          </View>
         </Animated.View>
 
         {/* Milestones */}
         <Animated.View
-          entering={FadeInDown.duration(600).delay(900)}
-          style={styles.milestonesWrap}
+          entering={FadeInDown.duration(500).delay(400)}
+          style={[
+            styles.section,
+            { backgroundColor: colors.card, borderColor: colors.border },
+          ]}
         >
-          <Text style={[styles.sectionTitle, { color: "rgba(255,255,255,0.7)" }]}>
+          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
             Milestones
+          </Text>
+          <Text style={[styles.sectionSubtitle, { color: colors.mutedForeground }]}>
+            Faith grows one day at a time.
           </Text>
           <View style={styles.milestonesRow}>
             {[3, 7, 14, 30, 60].map((m) => {
@@ -279,62 +320,63 @@ export default function StreakScreen() {
                   style={[
                     styles.milestone,
                     {
-                      borderColor: reached
-                        ? colors.goldGlow ?? "#D4A843"
-                        : "rgba(255,255,255,0.15)",
-                      backgroundColor: reached
-                        ? (colors.goldGlow ?? "#D4A843") + "22"
-                        : "transparent",
+                      borderColor: reached ? gold : colors.border,
+                      backgroundColor: reached ? gold + "18" : "transparent",
                     },
                   ]}
                 >
+                  <Ionicons
+                    name={reached ? "flame" : "flame-outline"}
+                    size={16}
+                    color={reached ? gold : colors.mutedForeground}
+                  />
                   <Text
                     style={[
                       styles.milestoneNum,
-                      { color: reached ? colors.goldGlow ?? "#D4A843" : "rgba(255,255,255,0.4)" },
+                      { color: reached ? accent : colors.mutedForeground },
                     ]}
                   >
                     {m}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.milestoneLabel,
-                      { color: reached ? "#FFFFFF" : "rgba(255,255,255,0.4)" },
-                    ]}
-                  >
-                    days
                   </Text>
                 </View>
               );
             })}
           </View>
         </Animated.View>
+
+        {/* Invite */}
+        <Animated.View
+          entering={FadeInDown.duration(500).delay(500)}
+          style={[
+            styles.inviteCard,
+            { backgroundColor: colors.card, borderColor: colors.border },
+          ]}
+        >
+          <View style={[styles.inviteIcon, { backgroundColor: gold + "1F" }]}>
+            <Ionicons name="people" size={22} color={accent} />
+          </View>
+          <Text style={[styles.inviteTitle, { color: colors.foreground }]}>
+            Pray together
+          </Text>
+          <Text style={[styles.inviteText, { color: colors.mutedForeground }]}>
+            "Where two or three gather in my name, there am I with them." — Matthew 18:20
+          </Text>
+          <TouchableOpacity
+            style={[styles.inviteBtn, { backgroundColor: colors.primary }]}
+            onPress={handleInvite}
+            activeOpacity={0.85}
+          >
+            <Feather name="user-plus" size={16} color={colors.primaryForeground} />
+            <Text
+              style={[styles.inviteBtnText, { color: colors.primaryForeground }]}
+            >
+              Invite a loved one
+            </Text>
+          </TouchableOpacity>
+        </Animated.View>
       </ScrollView>
     </View>
   );
-}
-
-function CountUp({ value, color }: { value: number; color: string }) {
-  // Simple animated count using a key-based remount; for smoother counter use Reanimated string
-  const [display, setDisplay] = React.useState(0);
-
-  useEffect(() => {
-    let raf: number;
-    const start = performance.now();
-    const duration = 1200;
-    const from = 0;
-    const to = value;
-    const tick = (t: number) => {
-      const p = Math.min(1, (t - start) / duration);
-      const eased = 1 - Math.pow(1 - p, 3);
-      setDisplay(Math.round(from + (to - from) * eased));
-      if (p < 1) raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [value]);
-
-  return <Text style={[styles.heroNumber, { color }]}>{display}</Text>;
 }
 
 function StatCard({
@@ -342,25 +384,30 @@ function StatCard({
   icon,
   label,
   value,
-  color,
+  colors,
 }: {
   delay: number;
   icon: any;
   label: string;
   value: number;
-  color: string;
+  colors: any;
 }) {
+  const gold = colors.goldGlow ?? "#D4A843";
   return (
     <Animated.View
-      entering={FadeInDown.duration(500).delay(delay)}
+      entering={FadeInDown.duration(450).delay(delay)}
       style={[
         styles.statCard,
-        { backgroundColor: "rgba(255,255,255,0.06)", borderColor: "rgba(255,255,255,0.1)" },
+        { backgroundColor: colors.card, borderColor: colors.border },
       ]}
     >
-      <Feather name={icon} size={20} color={color} />
-      <Text style={[styles.statValue, { color: "#FFFFFF" }]}>{value}</Text>
-      <Text style={[styles.statLabel, { color: "rgba(255,255,255,0.6)" }]}>
+      <View style={[styles.statIcon, { backgroundColor: gold + "1A" }]}>
+        <Feather name={icon} size={16} color={colors.accent ?? "#8B5E2A"} />
+      </View>
+      <Text style={[styles.statValue, { color: colors.foreground }]}>
+        {value}
+      </Text>
+      <Text style={[styles.statLabel, { color: colors.mutedForeground }]}>
         {label}
       </Text>
     </Animated.View>
@@ -370,180 +417,166 @@ function StatCard({
 const styles = StyleSheet.create({
   root: { flex: 1 },
   container: { flex: 1 },
-  content: { paddingHorizontal: 24 },
-  header: { marginBottom: 24 },
+  content: { paddingHorizontal: 20 },
+  header: { marginBottom: 16 },
   eyebrow: {
     fontSize: 11,
     fontFamily: "Inter_600SemiBold",
     letterSpacing: 2,
-    marginBottom: 6,
+    marginBottom: 4,
   },
   title: {
-    fontSize: 34,
+    fontSize: 32,
     fontFamily: "Inter_700Bold",
   },
-  heroNumberWrap: {
+
+  heroCard: {
+    borderRadius: 24,
+    borderWidth: 1,
+    paddingTop: 28,
+    paddingBottom: 22,
+    paddingHorizontal: 20,
     alignItems: "center",
-    paddingVertical: 28,
-    marginBottom: 8,
-    position: "relative",
+    overflow: "hidden",
+    marginBottom: 14,
   },
-  flameGlow: {
-    position: "absolute",
-    top: 10,
-    width: 220,
-    height: 220,
+  flameWrap: { marginBottom: 12 },
+  flameRing: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
     alignItems: "center",
     justifyContent: "center",
   },
-  flameGlowInner: {
-    width: 220,
-    height: 220,
-    borderRadius: 110,
-  },
-  numberRow: {
-    flexDirection: "row",
+  flameRingInner: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
     alignItems: "center",
+    justifyContent: "center",
   },
   heroNumber: {
-    fontSize: 96,
+    fontSize: 64,
     fontFamily: "Inter_700Bold",
-    lineHeight: 100,
+    lineHeight: 70,
   },
   heroLabel: {
-    marginTop: 8,
     fontSize: 14,
     fontFamily: "Inter_500Medium",
-    letterSpacing: 0.5,
+    marginTop: 2,
+    marginBottom: 14,
   },
-  weekRow: {
+  prayedPill: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    paddingHorizontal: 8,
-    marginBottom: 28,
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 999,
+    borderWidth: 1,
   },
-  dayCol: { alignItems: "center", gap: 10 },
-  dayLetter: {
-    fontSize: 11,
+  prayedPillText: {
+    fontSize: 12,
     fontFamily: "Inter_500Medium",
   },
-  dayDot: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    borderWidth: 1.5,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  statsGrid: {
+
+  statsRow: {
     flexDirection: "row",
-    gap: 12,
-    marginBottom: 20,
+    gap: 10,
+    marginBottom: 14,
   },
   statCard: {
     flex: 1,
-    padding: 18,
+    padding: 14,
     borderRadius: 18,
     borderWidth: 1,
-    gap: 10,
+    gap: 8,
+  },
+  statIcon: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    alignItems: "center",
+    justifyContent: "center",
   },
   statValue: {
-    fontSize: 28,
+    fontSize: 24,
     fontFamily: "Inter_700Bold",
   },
   statLabel: {
-    fontSize: 12,
-    fontFamily: "Inter_400Regular",
-  },
-  inviteCard: {
-    borderRadius: 22,
-    padding: 22,
-    borderWidth: 1,
-    marginBottom: 24,
-  },
-  inviteHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 14,
-    marginBottom: 14,
-  },
-  inviteIconWrap: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  inviteTitle: {
-    fontSize: 20,
-    fontFamily: "Inter_700Bold",
-  },
-  inviteText: {
-    fontSize: 14,
-    lineHeight: 22,
-    fontFamily: "Inter_400Regular",
-    marginBottom: 18,
-  },
-  inviteStatsRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 14,
-    paddingHorizontal: 8,
-    borderRadius: 14,
-    backgroundColor: "rgba(0,0,0,0.25)",
-    marginBottom: 18,
-  },
-  inviteStatCol: {
-    flex: 1,
-    alignItems: "center",
-  },
-  inviteStatNum: {
-    fontSize: 26,
-    fontFamily: "Inter_700Bold",
-  },
-  inviteStatLabel: {
     fontSize: 11,
     fontFamily: "Inter_400Regular",
-    marginTop: 2,
   },
-  inviteDivider: {
-    width: 1,
-    height: 36,
-    backgroundColor: "rgba(255,255,255,0.15)",
-  },
-  inviteBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 10,
-    paddingVertical: 16,
-    borderRadius: 14,
+
+  section: {
+    borderRadius: 20,
+    borderWidth: 1,
+    padding: 16,
     marginBottom: 14,
   },
-  inviteBtnText: {
-    color: "#0A0A14",
-    fontSize: 16,
-    fontFamily: "Inter_600SemiBold",
-  },
-  inviteFootnote: {
-    fontSize: 12,
-    fontStyle: "italic",
-    textAlign: "center",
-    lineHeight: 18,
-  },
-  milestonesWrap: {
-    marginBottom: 12,
-  },
   sectionTitle: {
+    fontSize: 16,
+    fontFamily: "Inter_700Bold",
+  },
+  sectionSubtitle: {
     fontSize: 12,
-    fontFamily: "Inter_600SemiBold",
-    letterSpacing: 1.5,
-    textTransform: "uppercase",
+    fontFamily: "Inter_400Regular",
+    marginTop: 2,
+    marginBottom: 14,
+  },
+
+  calHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     marginBottom: 12,
   },
+  calArrow: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  calTitle: {
+    fontSize: 15,
+    fontFamily: "Inter_600SemiBold",
+  },
+  calDayLetters: {
+    flexDirection: "row",
+    marginBottom: 6,
+  },
+  calDayLetter: {
+    flex: 1,
+    textAlign: "center",
+    fontSize: 11,
+    fontFamily: "Inter_500Medium",
+  },
+  calGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+  },
+  calCell: {
+    width: `${100 / 7}%`,
+    aspectRatio: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 2,
+  },
+  calDot: {
+    width: "85%",
+    height: "85%",
+    borderRadius: 999,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  calDayNum: {
+    fontSize: 12,
+  },
+
   milestonesRow: {
     flexDirection: "row",
-    gap: 10,
+    gap: 8,
   },
   milestone: {
     flex: 1,
@@ -552,14 +585,53 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     alignItems: "center",
     justifyContent: "center",
+    gap: 4,
   },
   milestoneNum: {
-    fontSize: 20,
+    fontSize: 16,
     fontFamily: "Inter_700Bold",
   },
-  milestoneLabel: {
-    fontSize: 10,
+
+  inviteCard: {
+    borderRadius: 20,
+    borderWidth: 1,
+    padding: 18,
+    alignItems: "center",
+  },
+  inviteIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 10,
+  },
+  inviteTitle: {
+    fontSize: 18,
+    fontFamily: "Inter_700Bold",
+    marginBottom: 6,
+  },
+  inviteText: {
+    fontSize: 13,
     fontFamily: "Inter_400Regular",
-    marginTop: 2,
+    fontStyle: "italic",
+    textAlign: "center",
+    lineHeight: 19,
+    marginBottom: 16,
+    paddingHorizontal: 4,
+  },
+  inviteBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 13,
+    paddingHorizontal: 22,
+    borderRadius: 12,
+    alignSelf: "stretch",
+  },
+  inviteBtnText: {
+    fontSize: 15,
+    fontFamily: "Inter_600SemiBold",
   },
 });
