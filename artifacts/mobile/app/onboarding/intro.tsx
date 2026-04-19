@@ -1,4 +1,6 @@
+import { VideoBackground } from "@/components/VideoBackground";
 import { useColors } from "@/hooks/useColors";
+import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
@@ -51,6 +53,15 @@ export default function IntroScreen() {
         { backgroundColor: colors.prayerBg ?? "#0A0A14" },
       ]}
     >
+      <VideoBackground
+        source={require("@/assets/videos/onboarding-bg.mp4")}
+        webUrl="/videos/onboarding-bg.mp4"
+        style={StyleSheet.absoluteFillObject}
+      />
+      <LinearGradient
+        colors={["rgba(10,10,20,0.55)", "rgba(10,10,20,0.7)", "rgba(10,10,20,0.92)"]}
+        style={StyleSheet.absoluteFillObject}
+      />
       <View
         style={[
           styles.inner,

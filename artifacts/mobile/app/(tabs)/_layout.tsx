@@ -16,6 +16,10 @@ function NativeTabLayout() {
         <Icon sf={{ default: "house", selected: "house.fill" }} />
         <Label>Home</Label>
       </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="streak">
+        <Icon sf={{ default: "flame", selected: "flame.fill" }} />
+        <Label>Streak</Label>
+      </NativeTabs.Trigger>
     </NativeTabs>
   );
 }
@@ -67,6 +71,18 @@ function ClassicTabLayout() {
               <SymbolView name="house" tintColor={color} size={24} />
             ) : (
               <Feather name="home" size={22} color={color} />
+            ),
+        }}
+      />
+      <Tabs.Screen
+        name="streak"
+        options={{
+          title: "Streak",
+          tabBarIcon: ({ color }) =>
+            isIOS ? (
+              <SymbolView name="flame" tintColor={color} size={24} />
+            ) : (
+              <Ionicons name="flame" size={22} color={color} />
             ),
         }}
       />
