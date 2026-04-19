@@ -33,6 +33,8 @@ import Animated, {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const CATEGORIES = [
+  "Family",
+  "Marriage",
   "Beginner",
   "Enlightenment",
   "Gratitude",
@@ -52,8 +54,6 @@ const CATEGORIES = [
   "Presentation",
   "Relationship",
   "Expectations",
-  "Family",
-  "Marriage",
 ];
 
 type PrayStep = "select" | "praying" | "complete";
