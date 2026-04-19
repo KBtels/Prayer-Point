@@ -1,3 +1,4 @@
+import RatingModal from "@/components/RatingModal";
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
 import { generatePrayer } from "@/constants/prayers";
@@ -70,7 +71,15 @@ const { width } = Dimensions.get("window");
 export default function PrayScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { recordPrayer } = useApp();
+  const {
+    recordPrayer,
+    totalPrayers,
+    ratingPrompted,
+    appRating,
+    setAppRating,
+    markRatingPrompted,
+  } = useApp();
+  const [showRating, setShowRating] = useState(false);
   const [step, setStep] = useState<PrayStep>("select");
   const [selected, setSelected] = useState<string[]>([]);
   const [customTopic, setCustomTopic] = useState("");
@@ -173,6 +182,9 @@ export default function PrayScreen() {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     recordPrayer(activeTopics);
     setStep("complete");
+    if (!ratingPrompted && appRating === 0 && totalPrayers + 1 === 2) {
+      setTimeout(() => setShowRating(true), 900);
+    }
   };
 
   if (step === "breath") {
@@ -305,6 +317,19 @@ export default function PrayScreen() {
           { backgroundColor: colors.prayerBg ?? "#0A0A14" },
         ]}
       >
+        <RatingModal
+          visible={showRating}
+          title="How was your prayer experience?"
+          subtitle="You've prayed twice — we'd love to hear how Prayer Point is helping."
+          onClose={() => {
+            setShowRating(false);
+            markRatingPrompted();
+          }}
+          onSubmit={(r, rev) => {
+            setAppRating(r, rev);
+            setShowRating(false);
+          }}
+        />
         <Animated.View
           entering={FadeIn.duration(600)}
           style={[

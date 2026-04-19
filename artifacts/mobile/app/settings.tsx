@@ -1,3 +1,4 @@
+import RatingModal from "@/components/RatingModal";
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
 import { Ionicons, Feather } from "@expo/vector-icons";
@@ -5,7 +6,7 @@ import * as Haptics from "expo-haptics";
 import * as ImagePicker from "expo-image-picker";
 import { Image } from "expo-image";
 import { router } from "expo-router";
-import React from "react";
+import React, { useState } from "react";
 import {
   Alert,
   Platform,
@@ -30,7 +31,11 @@ export default function SettingsScreen() {
     totalPrayers,
     profileImage,
     setProfileImage,
+    appRating,
+    appReview,
+    setAppRating,
   } = useApp();
+  const [showRating, setShowRating] = useState(false);
 
   const handlePickImage = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -217,6 +222,68 @@ export default function SettingsScreen() {
           </View>
         </Animated.View>
 
+        <Animated.View entering={FadeInDown.duration(500).delay(250)}>
+          <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>
+            Your Review
+          </Text>
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setShowRating(true);
+            }}
+            style={[
+              styles.infoCard,
+              { backgroundColor: colors.card, borderColor: colors.border, padding: 18 },
+            ]}
+          >
+            {appRating > 0 ? (
+              <View>
+                <View style={styles.reviewStarsRow}>
+                  {[1, 2, 3, 4, 5].map((n) => (
+                    <Ionicons
+                      key={n}
+                      name={n <= appRating ? "star" : "star-outline"}
+                      size={20}
+                      color={n <= appRating ? colors.goldGlow : colors.border}
+                      style={{ marginRight: 4 }}
+                    />
+                  ))}
+                  <Text style={[styles.reviewEdit, { color: colors.primary }]}>
+                    Edit
+                  </Text>
+                </View>
+                {appReview ? (
+                  <Text style={[styles.reviewText, { color: colors.foreground }]}>
+                    "{appReview}"
+                  </Text>
+                ) : (
+                  <Text style={[styles.reviewText, { color: colors.mutedForeground, fontStyle: "italic" }]}>
+                    Tap to add a few words about your experience.
+                  </Text>
+                )}
+              </View>
+            ) : (
+              <View>
+                <View style={styles.reviewStarsRow}>
+                  {[1, 2, 3, 4, 5].map((n) => (
+                    <Ionicons
+                      key={n}
+                      name="star-outline"
+                      size={20}
+                      color={colors.border}
+                      style={{ marginRight: 4 }}
+                    />
+                  ))}
+                </View>
+                <Text style={[styles.reviewText, { color: colors.mutedForeground }]}>
+                  Rate Prayer Point and share what you think.
+                </Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        </Animated.View>
+
         <Animated.View entering={FadeInDown.duration(500).delay(300)}>
           <TouchableOpacity
             style={[styles.resetBtn, { borderColor: colors.destructive }]}
@@ -229,6 +296,20 @@ export default function SettingsScreen() {
           </TouchableOpacity>
         </Animated.View>
       </ScrollView>
+
+      <RatingModal
+        visible={showRating}
+        initialRating={appRating}
+        initialReview={appReview}
+        title={appRating > 0 ? "Update your review" : "Rate Prayer Point"}
+        subtitle="Your feedback helps us shape Prayer Point for you."
+        submitLabel={appRating > 0 ? "Save" : "Submit"}
+        onClose={() => setShowRating(false)}
+        onSubmit={(r, rev) => {
+          setAppRating(r, rev);
+          setShowRating(false);
+        }}
+      />
     </View>
   );
 }
@@ -341,6 +422,21 @@ const styles = StyleSheet.create({
   statLabel: {
     fontSize: 13,
     fontFamily: "Inter_400Regular",
+  },
+  reviewStarsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  reviewEdit: {
+    marginLeft: "auto",
+    fontSize: 13,
+    fontFamily: "Inter_600SemiBold",
+  },
+  reviewText: {
+    fontSize: 14,
+    fontFamily: "Inter_400Regular",
+    lineHeight: 20,
   },
   sectionLabel: {
     fontSize: 12,

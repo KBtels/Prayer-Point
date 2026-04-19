@@ -49,6 +49,9 @@ interface AppState {
   totalPrayers: number;
   prayerLogs: PrayerLog[];
   friends: Friend[];
+  appRating: number;
+  appReview: string;
+  ratingPrompted: boolean;
 }
 
 interface AppContextValue extends AppState {
@@ -64,6 +67,8 @@ interface AppContextValue extends AppState {
   addReflection: (text: string, categories: string[]) => void;
   addFriend: (name: string) => void;
   removeFriend: (id: string) => void;
+  setAppRating: (rating: number, review: string) => void;
+  markRatingPrompted: () => void;
   isLoaded: boolean;
 }
 
@@ -87,6 +92,9 @@ const defaultState: AppState = {
   totalPrayers: 0,
   prayerLogs: [],
   friends: [],
+  appRating: 0,
+  appReview: "",
+  ratingPrompted: false,
 };
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
@@ -202,6 +210,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     [state, save]
   );
 
+  const setAppRating = (rating: number, review: string) =>
+    save({ ...state, appRating: rating, appReview: review, ratingPrompted: true });
+
+  const markRatingPrompted = () => save({ ...state, ratingPrompted: true });
+
   const addReflection = useCallback(
     (text: string, categories: string[]) => {
       const reflection: Reflection = {
@@ -231,6 +244,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         addReflection,
         addFriend,
         removeFriend,
+        setAppRating,
+        markRatingPrompted,
         isLoaded,
       }}
     >
