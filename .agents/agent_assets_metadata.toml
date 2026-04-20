@@ -29,3 +29,9 @@ id = "EMiR-YsxPCLSxTlcvYyrT"
 uri = "file://deliverables/PrayerPoint_Investor_Brief.md"
 type = "text"
 title = "Prayer Point — Investor Brief (baseline)"
+
+[[outputs]]
+id = "dbV3YYsJvo4jt0ktXkcna"
+uri = "file://deliverables/PrayerPoint_Maintenance_Cheatsheet.md"
+type = "text"
+title = "Solo Maintenance Cheat Sheet"
