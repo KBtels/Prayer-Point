@@ -28,8 +28,6 @@ export default function SettingsScreen() {
     name,
     age,
     prayFrequency,
-    streak,
-    totalPrayers,
     profileImage,
     setProfileImage,
     appRating,
@@ -183,39 +181,7 @@ export default function SettingsScreen() {
           </Text>
         </Animated.View>
 
-        <Animated.View
-          entering={FadeInDown.duration(500).delay(100)}
-          style={styles.statsRow}
-        >
-          <View
-            style={[
-              styles.statCard,
-              { backgroundColor: colors.card, borderColor: colors.border },
-            ]}
-          >
-            <Text style={[styles.statNum, { color: colors.primary }]}>
-              {streak}
-            </Text>
-            <Text style={[styles.statLabel, { color: colors.mutedForeground }]}>
-              Day Streak
-            </Text>
-          </View>
-          <View
-            style={[
-              styles.statCard,
-              { backgroundColor: colors.card, borderColor: colors.border },
-            ]}
-          >
-            <Text style={[styles.statNum, { color: colors.primary }]}>
-              {totalPrayers}
-            </Text>
-            <Text style={[styles.statLabel, { color: colors.mutedForeground }]}>
-              Prayers
-            </Text>
-          </View>
-        </Animated.View>
-
-        <Animated.View entering={FadeInDown.duration(500).delay(200)}>
+        <Animated.View entering={FadeInDown.duration(500).delay(100)}>
           <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>
             About You
           </Text>
