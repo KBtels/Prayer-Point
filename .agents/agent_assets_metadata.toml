@@ -35,3 +35,9 @@ id = "kxt2wOdgfIBABwYx1m3WA"
 uri = "file://deliverables/PrayerPoint_Codebase_Overview.md"
 type = "text"
 title = "Codebase Overview for Copilot / Investors"
+
+[[outputs]]
+id = "EMiR-YsxPCLSxTlcvYyrT"
+uri = "file://deliverables/PrayerPoint_Investor_Brief.md"
+type = "text"
+title = "Prayer Point — Investor Brief (baseline)"
