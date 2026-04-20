@@ -27,7 +27,6 @@ type TierMeta = {
 };
 
 const TIER_META: TierMeta[] = [
-  { packageIdentifier: "$rc_weekly", label: "Weekly" },
   { packageIdentifier: "$rc_monthly", label: "Monthly" },
   { packageIdentifier: "$rc_annual", label: "Annual", caption: "Best value", highlight: true },
 ];

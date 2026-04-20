@@ -36,8 +36,8 @@ const PLAY_STORE_PACKAGE_NAME = "com.prayerpoint.app";
 const ENTITLEMENT_IDENTIFIER = "premium";
 const ENTITLEMENT_DISPLAY_NAME = "Prayer Point Premium";
 
-const OFFERING_IDENTIFIER = "default";
-const OFFERING_DISPLAY_NAME = "Default Offering";
+const OFFERING_IDENTIFIER = "premium_v2";
+const OFFERING_DISPLAY_NAME = "Premium Offering v2";
 
 type Duration = "P1W" | "P1M" | "P2M" | "P3M" | "P6M" | "P1Y";
 
@@ -54,34 +54,24 @@ interface TierDefinition {
 
 const TIERS: TierDefinition[] = [
   {
-    productIdentifier: "prayerpoint_weekly",
-    playStoreProductIdentifier: "prayerpoint_weekly:weekly",
-    displayName: "Prayer Point Weekly",
-    userFacingTitle: "Weekly",
-    duration: "P1W",
-    packageIdentifier: "$rc_weekly",
-    packageDisplayName: "Weekly Subscription",
-    prices: [{ amount_micros: 37_000_000, currency: "ZAR" }],
-  },
-  {
-    productIdentifier: "prayerpoint_monthly",
-    playStoreProductIdentifier: "prayerpoint_monthly:monthly",
-    displayName: "Prayer Point Monthly",
+    productIdentifier: "prayerpoint_monthly_usd",
+    playStoreProductIdentifier: "prayerpoint_monthly_usd:monthly",
+    displayName: "Prayer Point Monthly (USD)",
     userFacingTitle: "Monthly",
     duration: "P1M",
     packageIdentifier: "$rc_monthly",
     packageDisplayName: "Monthly Subscription",
-    prices: [{ amount_micros: 55_000_000, currency: "ZAR" }],
+    prices: [{ amount_micros: 27_000_000, currency: "USD" }],
   },
   {
-    productIdentifier: "prayerpoint_annual",
-    playStoreProductIdentifier: "prayerpoint_annual:annual",
-    displayName: "Prayer Point Annual",
+    productIdentifier: "prayerpoint_annual_usd",
+    playStoreProductIdentifier: "prayerpoint_annual_usd:annual",
+    displayName: "Prayer Point Annual (USD)",
     userFacingTitle: "Annual",
     duration: "P1Y",
     packageIdentifier: "$rc_annual",
     packageDisplayName: "Annual Subscription",
-    prices: [{ amount_micros: 630_000_000, currency: "ZAR" }],
+    prices: [{ amount_micros: 70_000_000, currency: "USD" }],
   },
 ];
 
@@ -203,7 +193,10 @@ async function seedRevenueCat() {
       path: { project_id: project.id },
       body,
     });
-    if (error) throw new Error("Failed to create " + label + " product");
+    if (error) {
+      console.error("Error detail:", JSON.stringify(error, null, 2));
+      throw new Error("Failed to create " + label + " product");
+    }
     console.log("Created " + label + " product:", created.id);
     return created;
   };

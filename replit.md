@@ -31,7 +31,7 @@ See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and pa
 
 - Project: "Prayer Point" (id stored in `REVENUECAT_PROJECT_ID`)
 - Entitlement: `premium`
-- Offering: `default` with three packages: `$rc_weekly` (R37), `$rc_monthly` (R55), `$rc_annual` (R630, highlighted)
+- Current offering: `premium_v2` with two packages: `$rc_monthly` ($27 USD) and `$rc_annual` ($70 USD, highlighted as "Best value"). The legacy `default` offering (ZAR weekly/monthly/annual) is retained but no longer current.
 - Bundle id / package name: `com.prayerpoint.app` (placeholder — change before App Store / Play submission)
 - Client SDK: `react-native-purchases` in `artifacts/mobile`; client wrapper at `artifacts/mobile/lib/revenuecat.tsx` exports `initializeRevenueCat`, `SubscriptionProvider`, `useSubscription`
 - Server seed: `scripts/src/seedRevenueCat.ts` using `@replit/revenuecat-sdk` and the connector client at `scripts/src/revenueCatClient.ts`
