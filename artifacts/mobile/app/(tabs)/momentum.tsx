@@ -205,15 +205,9 @@ export default function MomentumScreen() {
           entering={FadeInDown.duration(500).delay(80)}
           style={[
             styles.heroCard,
-            { backgroundColor: colors.card, borderColor: colors.border },
+            { backgroundColor: "transparent", borderColor: "transparent" },
           ]}
         >
-          <LinearGradient
-            colors={[gold + "18", "transparent"]}
-            style={StyleSheet.absoluteFillObject}
-            start={{ x: 0.5, y: 0 }}
-            end={{ x: 0.5, y: 1 }}
-          />
           <Animated.View style={[styles.flameWrap, pulseStyle]}>
             <View style={[styles.flameRing, { backgroundColor: gold + "1A" }]}>
               <View style={[styles.flameRingInner, { backgroundColor: gold + "33" }]}>
