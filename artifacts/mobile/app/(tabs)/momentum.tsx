@@ -1,10 +1,12 @@
 import { Logo } from "@/components/Logo";
+import { VideoBackground } from "@/components/VideoBackground";
+import { HABIT_QUOTES } from "@/constants/quotes";
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Modal,
   Platform,
@@ -17,10 +19,32 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import Animated, { FadeInDown } from "react-native-reanimated";
+import Animated, {
+  Easing,
+  FadeInDown,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withTiming,
+} from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const DAY_LETTERS = ["S", "M", "T", "W", "T", "F", "S"];
+const MONTHS = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
 
 export default function MomentumScreen() {
   const colors = useColors();
@@ -30,6 +54,8 @@ export default function MomentumScreen() {
     longestStreak,
     totalPrayers,
     prayerLogs,
+    lastPrayedDate,
+    reflections,
     friends,
     addFriend,
     removeFriend,
@@ -41,8 +67,109 @@ export default function MomentumScreen() {
   const gold = colors.goldGlow ?? "#D4A843";
   const accent = colors.accent ?? "#8B5E2A";
 
-  // ── Analytics ─────────────────────────────────────────────────────────────
   const today = new Date();
+  const prayedToday = lastPrayedDate === today.toDateString();
+
+  // Pinned habit quote — rotates daily, stable while screen is open
+  const pinnedQuote = useMemo(() => {
+    const dayKey = Math.floor(Date.now() / (1000 * 60 * 60 * 24));
+    return HABIT_QUOTES[dayKey % HABIT_QUOTES.length];
+  }, []);
+
+  // Build set of "prayed" dates from streak
+  const prayedDates = useMemo(() => {
+    const set = new Set<string>();
+    if (!lastPrayedDate || streak === 0) return set;
+    const last = new Date(lastPrayedDate);
+    for (let i = 0; i < streak; i++) {
+      const d = new Date(last);
+      d.setDate(last.getDate() - i);
+      set.add(d.toDateString());
+    }
+    return set;
+  }, [streak, lastPrayedDate]);
+
+  // Calendar state
+  const [calMode, setCalMode] = useState<"week" | "month">("week");
+  const [anchor, setAnchor] = useState<Date>(() => new Date());
+
+  const monthCells = useMemo(() => {
+    const y = anchor.getFullYear();
+    const m = anchor.getMonth();
+    const firstDay = new Date(y, m, 1).getDay();
+    const daysInMonth = new Date(y, m + 1, 0).getDate();
+    const cells: Array<{ day: number | null; date: Date | null }> = [];
+    for (let i = 0; i < firstDay; i++) cells.push({ day: null, date: null });
+    for (let d = 1; d <= daysInMonth; d++) {
+      cells.push({ day: d, date: new Date(y, m, d) });
+    }
+    return cells;
+  }, [anchor]);
+
+  const weekCells = useMemo(() => {
+    const start = new Date(anchor);
+    start.setDate(anchor.getDate() - anchor.getDay());
+    const cells: Array<{ day: number | null; date: Date | null }> = [];
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(start);
+      d.setDate(start.getDate() + i);
+      cells.push({ day: d.getDate(), date: d });
+    }
+    return cells;
+  }, [anchor]);
+
+  const calendarCells = calMode === "week" ? weekCells : monthCells;
+
+  const calHeaderLabel = useMemo(() => {
+    if (calMode === "month") {
+      return `${MONTHS[anchor.getMonth()]} ${anchor.getFullYear()}`;
+    }
+    const start = new Date(anchor);
+    start.setDate(anchor.getDate() - anchor.getDay());
+    const end = new Date(start);
+    end.setDate(start.getDate() + 6);
+    const sameMonth = start.getMonth() === end.getMonth();
+    const startLabel = `${MONTHS[start.getMonth()].slice(0, 3)} ${start.getDate()}`;
+    const endLabel = sameMonth
+      ? `${end.getDate()}`
+      : `${MONTHS[end.getMonth()].slice(0, 3)} ${end.getDate()}`;
+    return `${startLabel} – ${endLabel}`;
+  }, [calMode, anchor]);
+
+  // Flame pulse
+  const pulse = useSharedValue(1);
+  useEffect(() => {
+    pulse.value = withRepeat(
+      withSequence(
+        withTiming(1.06, { duration: 1400, easing: Easing.inOut(Easing.quad) }),
+        withTiming(1, { duration: 1400, easing: Easing.inOut(Easing.quad) }),
+      ),
+      -1,
+      false,
+    );
+  }, []);
+  const pulseStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: pulse.value }],
+  }));
+
+  const goPrev = () => {
+    Haptics.selectionAsync();
+    const next = new Date(anchor);
+    if (calMode === "week") next.setDate(anchor.getDate() - 7);
+    else next.setMonth(anchor.getMonth() - 1);
+    setAnchor(next);
+  };
+  const goNext = () => {
+    Haptics.selectionAsync();
+    const next = new Date(anchor);
+    if (calMode === "week") next.setDate(anchor.getDate() + 7);
+    else next.setMonth(anchor.getMonth() + 1);
+    setAnchor(next);
+  };
+  const toggleMode = () => {
+    Haptics.selectionAsync();
+    setCalMode(calMode === "week" ? "month" : "week");
+  };
 
   // Last 7 days bar data
   const last7 = useMemo(() => {
@@ -114,13 +241,32 @@ export default function MomentumScreen() {
     }
   };
 
-  const handleRemoveFriend = (id: string, name: string) => {
+  const handleRemoveFriend = (id: string, _name: string) => {
     Haptics.selectionAsync();
     removeFriend(id);
   };
 
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
+      {/* Background video — fades into the cream background */}
+      <View style={[styles.videoLayer, { height: topInset + 280 }]}>
+        <VideoBackground
+          source={require("@/assets/videos/walking-group.mp4")}
+          webUrl="/videos/walking-group.mp4"
+          style={StyleSheet.absoluteFillObject}
+        />
+        <LinearGradient
+          colors={[
+            "rgba(10,10,20,0.45)",
+            "rgba(10,10,20,0.18)",
+            "rgba(251,247,240,0.15)",
+            colors.background,
+          ]}
+          locations={[0, 0.45, 0.78, 1]}
+          style={StyleSheet.absoluteFillObject}
+        />
+      </View>
+
       <ScrollView
         style={styles.container}
         contentContainerStyle={[
@@ -131,7 +277,7 @@ export default function MomentumScreen() {
       >
         {/* Logo */}
         <Animated.View entering={FadeInDown.duration(400)} style={styles.logoRow}>
-          <Logo size={26} />
+          <Logo size={28} color="#FFFFFF" />
         </Animated.View>
 
         {/* Header */}
@@ -139,15 +285,66 @@ export default function MomentumScreen() {
           entering={FadeInDown.duration(400).delay(40)}
           style={styles.header}
         >
-          <Text style={[styles.eyebrow, { color: colors.mutedForeground }]}>
-            YOUR ANALYTICS
+          <Text style={[styles.eyebrow, { color: "rgba(255,255,255,0.85)" }]}>
+            YOUR JOURNEY
           </Text>
-          <Text style={[styles.title, { color: colors.foreground }]}>
+          <Text style={[styles.title, { color: "#FFFFFF" }]}>
             Prayer Momentum
           </Text>
-          <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>
-            See how your prayer life is growing — and grow together with friends.
+        </Animated.View>
+
+        {/* Hero flame card */}
+        <Animated.View
+          entering={FadeInDown.duration(500).delay(80)}
+          style={[
+            styles.heroCard,
+            { backgroundColor: colors.card, borderColor: colors.border },
+          ]}
+        >
+          <LinearGradient
+            colors={[gold + "18", "transparent"]}
+            style={StyleSheet.absoluteFillObject}
+            start={{ x: 0.5, y: 0 }}
+            end={{ x: 0.5, y: 1 }}
+          />
+          <Animated.View style={[styles.flameWrap, pulseStyle]}>
+            <View style={[styles.flameRing, { backgroundColor: gold + "1A" }]}>
+              <View style={[styles.flameRingInner, { backgroundColor: gold + "33" }]}>
+                <Ionicons name="flame" size={42} color={gold} />
+              </View>
+            </View>
+          </Animated.View>
+
+          <Text style={[styles.heroNumber, { color: colors.foreground }]}>
+            {streak}
           </Text>
+          <Text style={[styles.heroLabel, { color: colors.mutedForeground }]}>
+            day{streak === 1 ? "" : "s"} in a row
+          </Text>
+
+          <View
+            style={[
+              styles.prayedPill,
+              {
+                backgroundColor: prayedToday ? gold + "22" : colors.muted,
+                borderColor: prayedToday ? gold + "55" : colors.border,
+              },
+            ]}
+          >
+            <Ionicons
+              name={prayedToday ? "checkmark-circle" : "time-outline"}
+              size={14}
+              color={prayedToday ? accent : colors.mutedForeground}
+            />
+            <Text
+              style={[
+                styles.prayedPillText,
+                { color: prayedToday ? accent : colors.mutedForeground },
+              ]}
+            >
+              {prayedToday ? "Prayed today" : "Pray today to keep it going"}
+            </Text>
+          </View>
         </Animated.View>
 
         {/* Quick stats */}
@@ -155,30 +352,187 @@ export default function MomentumScreen() {
           <StatPill
             colors={colors}
             delay={120}
-            value={streak}
-            label="Current"
-            icon="flame"
-            tone="gold"
-          />
-          <StatPill
-            colors={colors}
-            delay={170}
             value={longestStreak}
             label="Longest"
             icon="trending-up"
           />
           <StatPill
             colors={colors}
-            delay={220}
+            delay={170}
             value={totalPrayers}
             label="Total"
             icon="heart"
           />
+          <StatPill
+            colors={colors}
+            delay={220}
+            value={reflections.length}
+            label="Reflections"
+            icon="book"
+          />
         </View>
+
+        {/* Pinned habit quote */}
+        <Animated.View
+          entering={FadeInDown.duration(500).delay(260)}
+          style={[
+            styles.pinnedQuoteCard,
+            { backgroundColor: colors.card, borderColor: gold + "55" },
+          ]}
+        >
+          <View style={styles.pinnedQuoteHeader}>
+            <Ionicons name="bookmark" size={14} color={gold} />
+            <Text style={[styles.pinnedQuoteLabel, { color: gold }]}>
+              On Habit
+            </Text>
+          </View>
+          <Text style={[styles.pinnedQuoteText, { color: colors.foreground }]}>
+            "{pinnedQuote.text}"
+          </Text>
+          <Text style={[styles.pinnedQuoteAuthor, { color: colors.mutedForeground }]}>
+            — {pinnedQuote.author}
+          </Text>
+        </Animated.View>
+
+        {/* Calendar history */}
+        <Animated.View
+          entering={FadeInDown.duration(500).delay(300)}
+          style={[
+            styles.section,
+            { backgroundColor: colors.card, borderColor: colors.border },
+          ]}
+        >
+          <View style={styles.calHeader}>
+            <TouchableOpacity onPress={goPrev} style={styles.calArrow}>
+              <Feather name="chevron-left" size={20} color={colors.foreground} />
+            </TouchableOpacity>
+            <Text style={[styles.calTitle, { color: colors.foreground }]}>
+              {calHeaderLabel}
+            </Text>
+            <TouchableOpacity onPress={goNext} style={styles.calArrow}>
+              <Feather name="chevron-right" size={20} color={colors.foreground} />
+            </TouchableOpacity>
+          </View>
+
+          <TouchableOpacity
+            onPress={toggleMode}
+            activeOpacity={0.7}
+            style={styles.calModeToggle}
+          >
+            <Text style={[styles.calModeText, { color: colors.mutedForeground }]}>
+              {calMode === "week" ? "Show month" : "Show week"}
+            </Text>
+          </TouchableOpacity>
+
+          <View style={styles.calDayLetters}>
+            {DAY_LETTERS.map((d, i) => (
+              <Text
+                key={i}
+                style={[styles.calDayLetter, { color: colors.mutedForeground }]}
+              >
+                {d}
+              </Text>
+            ))}
+          </View>
+
+          <View style={styles.calGrid}>
+            {calendarCells.map((cell, i) => {
+              if (!cell.day) return <View key={i} style={styles.calCell} />;
+              const isFuture = cell.date! > today;
+              const isToday =
+                cell.date!.toDateString() === today.toDateString();
+              const wasPrayed = prayedDates.has(cell.date!.toDateString());
+              return (
+                <View key={i} style={styles.calCell}>
+                  <View
+                    style={[
+                      styles.calDot,
+                      {
+                        backgroundColor: wasPrayed ? gold : "transparent",
+                        borderColor: isToday
+                          ? gold
+                          : wasPrayed
+                            ? gold
+                            : "transparent",
+                        borderWidth: isToday ? 1.5 : 0,
+                        opacity: isFuture ? 0.3 : 1,
+                      },
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.calDayNum,
+                        {
+                          color: wasPrayed
+                            ? "#FFFFFF"
+                            : isToday
+                              ? accent
+                              : colors.foreground,
+                          fontFamily: isToday
+                            ? "Inter_700Bold"
+                            : "Inter_500Medium",
+                        },
+                      ]}
+                    >
+                      {cell.day}
+                    </Text>
+                  </View>
+                </View>
+              );
+            })}
+          </View>
+        </Animated.View>
+
+        {/* Milestones */}
+        <Animated.View
+          entering={FadeInDown.duration(500).delay(340)}
+          style={[
+            styles.section,
+            { backgroundColor: colors.card, borderColor: colors.border },
+          ]}
+        >
+          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
+            Milestones
+          </Text>
+          <Text style={[styles.sectionSubtitle, { color: colors.mutedForeground }]}>
+            Faith grows one day at a time.
+          </Text>
+          <View style={styles.milestonesRow}>
+            {[3, 7, 14, 30, 60].map((m) => {
+              const reached = streak >= m;
+              return (
+                <View
+                  key={m}
+                  style={[
+                    styles.milestone,
+                    {
+                      borderColor: reached ? gold : colors.border,
+                      backgroundColor: reached ? gold + "18" : "transparent",
+                    },
+                  ]}
+                >
+                  <Ionicons
+                    name={reached ? "flame" : "flame-outline"}
+                    size={16}
+                    color={reached ? gold : colors.mutedForeground}
+                  />
+                  <Text
+                    style={[
+                      styles.milestoneNum,
+                      { color: reached ? accent : colors.mutedForeground },
+                    ]}
+                  >
+                    {m}
+                  </Text>
+                </View>
+              );
+            })}
+          </View>
+        </Animated.View>
 
         {/* Weekly chart */}
         <Animated.View
-          entering={FadeInDown.duration(500).delay(280)}
+          entering={FadeInDown.duration(500).delay(380)}
           style={[
             styles.section,
             { backgroundColor: colors.card, borderColor: colors.border },
@@ -244,14 +598,14 @@ export default function MomentumScreen() {
         <View style={styles.insightsRow}>
           <InsightCard
             colors={colors}
-            delay={340}
+            delay={420}
             value={last30Total}
             label="Last 30 days"
             sublabel="prayers prayed"
           />
           <InsightCard
             colors={colors}
-            delay={380}
+            delay={460}
             value={prayerLogs.length}
             label="Active days"
             sublabel="all time"
@@ -260,7 +614,7 @@ export default function MomentumScreen() {
 
         {/* Top categories */}
         <Animated.View
-          entering={FadeInDown.duration(500).delay(420)}
+          entering={FadeInDown.duration(500).delay(500)}
           style={[
             styles.section,
             { backgroundColor: colors.card, borderColor: colors.border },
@@ -321,7 +675,7 @@ export default function MomentumScreen() {
 
         {/* Shared Streaks */}
         <Animated.View
-          entering={FadeInDown.duration(500).delay(480)}
+          entering={FadeInDown.duration(500).delay(540)}
           style={[
             styles.section,
             { backgroundColor: colors.card, borderColor: colors.border },
@@ -533,43 +887,26 @@ function StatPill({
   value,
   label,
   icon,
-  tone,
 }: {
   colors: any;
   delay: number;
   value: number;
   label: string;
   icon: any;
-  tone?: "gold";
 }) {
-  const gold = colors.goldGlow ?? "#D4A843";
-  const accent = colors.accent ?? "#8B5E2A";
-  const isGold = tone === "gold";
   return (
     <Animated.View
       entering={FadeInDown.duration(450).delay(delay)}
       style={[
         styles.statPill,
-        {
-          backgroundColor: isGold ? gold + "16" : colors.card,
-          borderColor: isGold ? gold + "55" : colors.border,
-        },
+        { backgroundColor: colors.card, borderColor: colors.border },
       ]}
     >
-      <Ionicons
-        name={icon}
-        size={14}
-        color={isGold ? accent : colors.mutedForeground}
-      />
+      <Ionicons name={icon} size={14} color={colors.mutedForeground} />
       <Text style={[styles.statPillValue, { color: colors.foreground }]}>
         {value}
       </Text>
-      <Text
-        style={[
-          styles.statPillLabel,
-          { color: isGold ? accent : colors.mutedForeground },
-        ]}
-      >
+      <Text style={[styles.statPillLabel, { color: colors.mutedForeground }]}>
         {label}
       </Text>
     </Animated.View>
@@ -614,8 +951,15 @@ const styles = StyleSheet.create({
   root: { flex: 1 },
   container: { flex: 1 },
   content: { paddingHorizontal: 20 },
-  logoRow: { marginBottom: 12 },
-  header: { marginBottom: 18 },
+  videoLayer: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    overflow: "hidden",
+  },
+  logoRow: { marginBottom: 14 },
+  header: { marginBottom: 16 },
   eyebrow: {
     fontSize: 11,
     fontFamily: "Inter_600SemiBold",
@@ -623,16 +967,62 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   title: {
-    fontSize: 30,
+    fontSize: 32,
     fontFamily: "Inter_700Bold",
-    marginBottom: 6,
-  },
-  subtitle: {
-    fontSize: 13,
-    fontFamily: "Inter_400Regular",
-    lineHeight: 19,
   },
 
+  // Hero
+  heroCard: {
+    borderRadius: 24,
+    borderWidth: 1,
+    paddingTop: 28,
+    paddingBottom: 22,
+    paddingHorizontal: 20,
+    alignItems: "center",
+    overflow: "hidden",
+    marginBottom: 14,
+  },
+  flameWrap: { marginBottom: 12 },
+  flameRing: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  flameRingInner: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  heroNumber: {
+    fontSize: 64,
+    fontFamily: "Inter_700Bold",
+    lineHeight: 70,
+  },
+  heroLabel: {
+    fontSize: 14,
+    fontFamily: "Inter_500Medium",
+    marginTop: 2,
+    marginBottom: 14,
+  },
+  prayedPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 999,
+    borderWidth: 1,
+  },
+  prayedPillText: {
+    fontSize: 12,
+    fontFamily: "Inter_500Medium",
+  },
+
+  // Stat pills
   statsRow: {
     flexDirection: "row",
     gap: 8,
@@ -658,6 +1048,38 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
   },
 
+  // Pinned quote
+  pinnedQuoteCard: {
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 18,
+    marginBottom: 14,
+  },
+  pinnedQuoteHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 10,
+  },
+  pinnedQuoteLabel: {
+    fontSize: 11,
+    fontFamily: "Inter_600SemiBold",
+    letterSpacing: 1.2,
+    textTransform: "uppercase",
+  },
+  pinnedQuoteText: {
+    fontSize: 15,
+    fontFamily: "Inter_400Regular",
+    fontStyle: "italic",
+    lineHeight: 22,
+    marginBottom: 8,
+  },
+  pinnedQuoteAuthor: {
+    fontSize: 12,
+    fontFamily: "Inter_500Medium",
+    letterSpacing: 0.3,
+  },
+
   section: {
     borderRadius: 20,
     borderWidth: 1,
@@ -679,6 +1101,92 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_400Regular",
     marginTop: 2,
   },
+
+  // Calendar
+  calHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 12,
+  },
+  calArrow: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  calTitle: {
+    fontSize: 15,
+    fontFamily: "Inter_600SemiBold",
+  },
+  calModeToggle: {
+    alignSelf: "center",
+    marginTop: 4,
+    marginBottom: 6,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+  },
+  calModeText: {
+    fontSize: 11,
+    fontFamily: "Inter_500Medium",
+    letterSpacing: 0.4,
+    textDecorationLine: "underline",
+    opacity: 0.7,
+  },
+  calDayLetters: {
+    flexDirection: "row",
+    marginBottom: 6,
+  },
+  calDayLetter: {
+    flex: 1,
+    textAlign: "center",
+    fontSize: 11,
+    fontFamily: "Inter_500Medium",
+  },
+  calGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+  },
+  calCell: {
+    width: `${100 / 7}%`,
+    aspectRatio: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 2,
+  },
+  calDot: {
+    width: "85%",
+    height: "85%",
+    borderRadius: 999,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  calDayNum: {
+    fontSize: 12,
+  },
+
+  // Milestones
+  milestonesRow: {
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 12,
+  },
+  milestone: {
+    flex: 1,
+    aspectRatio: 1,
+    borderRadius: 16,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
+  },
+  milestoneNum: {
+    fontSize: 13,
+    fontFamily: "Inter_700Bold",
+  },
+
+  // Weekly chart
   weekPill: {
     flexDirection: "row",
     gap: 4,
@@ -691,7 +1199,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontFamily: "Inter_600SemiBold",
   },
-
   chart: {
     flexDirection: "row",
     height: 130,
@@ -719,6 +1226,7 @@ const styles = StyleSheet.create({
     marginTop: 6,
   },
 
+  // Insights
   insightsRow: {
     flexDirection: "row",
     gap: 10,
@@ -729,32 +1237,27 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     borderWidth: 1,
     padding: 14,
-    gap: 2,
   },
   insightValue: {
-    fontSize: 26,
+    fontSize: 24,
     fontFamily: "Inter_700Bold",
-    marginBottom: 4,
   },
   insightLabel: {
     fontSize: 13,
     fontFamily: "Inter_600SemiBold",
+    marginTop: 2,
   },
   insightSub: {
     fontSize: 11,
     fontFamily: "Inter_400Regular",
+    marginTop: 1,
   },
 
-  emptyText: {
-    fontSize: 13,
-    fontFamily: "Inter_400Regular",
-    fontStyle: "italic",
-  },
-
+  // Categories
   catLabelRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 4,
+    marginBottom: 5,
   },
   catLabel: {
     fontSize: 13,
@@ -773,13 +1276,19 @@ const styles = StyleSheet.create({
     height: "100%",
     borderRadius: 4,
   },
+  emptyText: {
+    fontSize: 13,
+    fontFamily: "Inter_400Regular",
+    fontStyle: "italic",
+  },
 
+  // Friends
   addBtn: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
     borderRadius: 999,
     borderWidth: 1,
   },
@@ -787,35 +1296,33 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: "Inter_600SemiBold",
   },
-
   friendsEmpty: {
     marginTop: 14,
     paddingVertical: 22,
-    paddingHorizontal: 16,
+    paddingHorizontal: 18,
     borderRadius: 16,
     alignItems: "center",
     overflow: "hidden",
   },
   friendsEmptyIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 10,
   },
   friendsEmptyTitle: {
-    fontSize: 16,
+    fontSize: 15,
     fontFamily: "Inter_700Bold",
     marginBottom: 4,
   },
   friendsEmptyText: {
-    fontSize: 13,
+    fontSize: 12,
     fontFamily: "Inter_400Regular",
     textAlign: "center",
-    lineHeight: 19,
-    marginBottom: 16,
-    paddingHorizontal: 4,
+    lineHeight: 18,
+    marginBottom: 14,
   },
   inviteBtn: {
     flexDirection: "row",
@@ -823,15 +1330,13 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 8,
     paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 12,
-    alignSelf: "stretch",
+    paddingHorizontal: 18,
+    borderRadius: 999,
   },
   inviteBtnText: {
-    fontSize: 14,
+    fontSize: 13,
     fontFamily: "Inter_600SemiBold",
   },
-
   friendRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -841,9 +1346,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   friendAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -863,25 +1368,25 @@ const styles = StyleSheet.create({
   },
   friendStreakText: {
     fontSize: 11,
-    fontFamily: "Inter_500Medium",
+    fontFamily: "Inter_400Regular",
   },
 
+  // Modal
   modalBackdrop: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.45)",
     alignItems: "center",
     justifyContent: "center",
-    padding: 24,
+    paddingHorizontal: 24,
   },
   modalCard: {
     width: "100%",
-    maxWidth: 380,
-    borderRadius: 20,
+    borderRadius: 18,
     borderWidth: 1,
     padding: 20,
   },
   modalTitle: {
-    fontSize: 18,
+    fontSize: 17,
     fontFamily: "Inter_700Bold",
     marginBottom: 4,
   },
@@ -895,13 +1400,13 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 12,
-    fontSize: 15,
-    fontFamily: "Inter_500Medium",
+    fontSize: 14,
+    fontFamily: "Inter_400Regular",
     marginBottom: 14,
   },
   modalActions: {
     flexDirection: "row",
-    gap: 8,
+    gap: 10,
   },
   modalBtn: {
     flex: 1,

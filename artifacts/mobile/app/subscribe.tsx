@@ -40,13 +40,33 @@ export default function SubscribeScreen() {
 
   const tiers = useMemo(() => {
     const packages = currentOffering?.availablePackages ?? [];
-    return TIER_META
+    const built = TIER_META
       .map((meta) => {
         const pkg = packages.find((p) => p.identifier === meta.packageIdentifier);
         if (!pkg) return null;
         return { ...meta, pkg };
       })
       .filter((t): t is TierMeta & { pkg: PurchasesPackage } => t !== null);
+
+    // Compute annual savings vs paying monthly for 12 months
+    const monthly = built.find((t) => t.packageIdentifier === "$rc_monthly");
+    const annual = built.find((t) => t.packageIdentifier === "$rc_annual");
+    let annualSavingsPct: number | null = null;
+    if (monthly && annual) {
+      const yearAtMonthly = monthly.pkg.product.price * 12;
+      const yearAtAnnual = annual.pkg.product.price;
+      if (yearAtMonthly > 0 && yearAtAnnual < yearAtMonthly) {
+        annualSavingsPct = Math.round(
+          ((yearAtMonthly - yearAtAnnual) / yearAtMonthly) * 100,
+        );
+      }
+    }
+
+    return built.map((t) => ({
+      ...t,
+      savingsPct:
+        t.packageIdentifier === "$rc_annual" ? annualSavingsPct : null,
+    }));
   }, [currentOffering]);
 
   const [selectedId, setSelectedId] = useState<string>(
@@ -205,9 +225,23 @@ export default function SubscribeScreen() {
                         )}
                       </View>
                     </View>
-                    <Text style={[styles.tierPrice, { color: colors.foreground }]}>
-                      {priceString}
-                    </Text>
+                    <View style={styles.tierRight}>
+                      <Text style={[styles.tierPrice, { color: colors.foreground }]}>
+                        {priceString}
+                      </Text>
+                      {tier.savingsPct != null && tier.savingsPct > 0 && (
+                        <View
+                          style={[
+                            styles.savingsBadge,
+                            { backgroundColor: gold, borderColor: gold },
+                          ]}
+                        >
+                          <Text style={styles.savingsBadgeText}>
+                            Save {tier.savingsPct}%
+                          </Text>
+                        </View>
+                      )}
+                    </View>
                   </TouchableOpacity>
                 </Animated.View>
               );
@@ -318,10 +352,26 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_400Regular",
     marginTop: 2,
   },
+  tierRight: {
+    alignItems: "flex-end",
+    gap: 4,
+  },
   tierPrice: {
     fontSize: 16,
     fontFamily: "Inter_700Bold",
     letterSpacing: 0.2,
+  },
+  savingsBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 999,
+    borderWidth: 1,
+  },
+  savingsBadgeText: {
+    fontSize: 10,
+    fontFamily: "Inter_700Bold",
+    letterSpacing: 0.4,
+    color: "#0A0A14",
   },
   cta: {
     paddingVertical: 18,
