@@ -31,20 +31,6 @@ import Animated, {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const DAY_LETTERS = ["S", "M", "T", "W", "T", "F", "S"];
-const MONTHS = [
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December",
-];
 
 export default function MomentumScreen() {
   const colors = useColors();
@@ -76,66 +62,6 @@ export default function MomentumScreen() {
     return HABIT_QUOTES[dayKey % HABIT_QUOTES.length];
   }, []);
 
-  // Build set of "prayed" dates from streak
-  const prayedDates = useMemo(() => {
-    const set = new Set<string>();
-    if (!lastPrayedDate || streak === 0) return set;
-    const last = new Date(lastPrayedDate);
-    for (let i = 0; i < streak; i++) {
-      const d = new Date(last);
-      d.setDate(last.getDate() - i);
-      set.add(d.toDateString());
-    }
-    return set;
-  }, [streak, lastPrayedDate]);
-
-  // Calendar state
-  const [calMode, setCalMode] = useState<"week" | "month">("week");
-  const [anchor, setAnchor] = useState<Date>(() => new Date());
-
-  const monthCells = useMemo(() => {
-    const y = anchor.getFullYear();
-    const m = anchor.getMonth();
-    const firstDay = new Date(y, m, 1).getDay();
-    const daysInMonth = new Date(y, m + 1, 0).getDate();
-    const cells: Array<{ day: number | null; date: Date | null }> = [];
-    for (let i = 0; i < firstDay; i++) cells.push({ day: null, date: null });
-    for (let d = 1; d <= daysInMonth; d++) {
-      cells.push({ day: d, date: new Date(y, m, d) });
-    }
-    return cells;
-  }, [anchor]);
-
-  const weekCells = useMemo(() => {
-    const start = new Date(anchor);
-    start.setDate(anchor.getDate() - anchor.getDay());
-    const cells: Array<{ day: number | null; date: Date | null }> = [];
-    for (let i = 0; i < 7; i++) {
-      const d = new Date(start);
-      d.setDate(start.getDate() + i);
-      cells.push({ day: d.getDate(), date: d });
-    }
-    return cells;
-  }, [anchor]);
-
-  const calendarCells = calMode === "week" ? weekCells : monthCells;
-
-  const calHeaderLabel = useMemo(() => {
-    if (calMode === "month") {
-      return `${MONTHS[anchor.getMonth()]} ${anchor.getFullYear()}`;
-    }
-    const start = new Date(anchor);
-    start.setDate(anchor.getDate() - anchor.getDay());
-    const end = new Date(start);
-    end.setDate(start.getDate() + 6);
-    const sameMonth = start.getMonth() === end.getMonth();
-    const startLabel = `${MONTHS[start.getMonth()].slice(0, 3)} ${start.getDate()}`;
-    const endLabel = sameMonth
-      ? `${end.getDate()}`
-      : `${MONTHS[end.getMonth()].slice(0, 3)} ${end.getDate()}`;
-    return `${startLabel} – ${endLabel}`;
-  }, [calMode, anchor]);
-
   // Flame pulse
   const pulse = useSharedValue(1);
   useEffect(() => {
@@ -151,25 +77,6 @@ export default function MomentumScreen() {
   const pulseStyle = useAnimatedStyle(() => ({
     transform: [{ scale: pulse.value }],
   }));
-
-  const goPrev = () => {
-    Haptics.selectionAsync();
-    const next = new Date(anchor);
-    if (calMode === "week") next.setDate(anchor.getDate() - 7);
-    else next.setMonth(anchor.getMonth() - 1);
-    setAnchor(next);
-  };
-  const goNext = () => {
-    Haptics.selectionAsync();
-    const next = new Date(anchor);
-    if (calMode === "week") next.setDate(anchor.getDate() + 7);
-    else next.setMonth(anchor.getMonth() + 1);
-    setAnchor(next);
-  };
-  const toggleMode = () => {
-    Haptics.selectionAsync();
-    setCalMode(calMode === "week" ? "month" : "week");
-  };
 
   // Last 7 days bar data
   const last7 = useMemo(() => {
@@ -392,95 +299,6 @@ export default function MomentumScreen() {
           <Text style={[styles.pinnedQuoteAuthor, { color: colors.mutedForeground }]}>
             — {pinnedQuote.author}
           </Text>
-        </Animated.View>
-
-        {/* Calendar history */}
-        <Animated.View
-          entering={FadeInDown.duration(500).delay(300)}
-          style={[
-            styles.section,
-            { backgroundColor: colors.card, borderColor: colors.border },
-          ]}
-        >
-          <View style={styles.calHeader}>
-            <TouchableOpacity onPress={goPrev} style={styles.calArrow}>
-              <Feather name="chevron-left" size={20} color={colors.foreground} />
-            </TouchableOpacity>
-            <Text style={[styles.calTitle, { color: colors.foreground }]}>
-              {calHeaderLabel}
-            </Text>
-            <TouchableOpacity onPress={goNext} style={styles.calArrow}>
-              <Feather name="chevron-right" size={20} color={colors.foreground} />
-            </TouchableOpacity>
-          </View>
-
-          <TouchableOpacity
-            onPress={toggleMode}
-            activeOpacity={0.7}
-            style={styles.calModeToggle}
-          >
-            <Text style={[styles.calModeText, { color: colors.mutedForeground }]}>
-              {calMode === "week" ? "Show month" : "Show week"}
-            </Text>
-          </TouchableOpacity>
-
-          <View style={styles.calDayLetters}>
-            {DAY_LETTERS.map((d, i) => (
-              <Text
-                key={i}
-                style={[styles.calDayLetter, { color: colors.mutedForeground }]}
-              >
-                {d}
-              </Text>
-            ))}
-          </View>
-
-          <View style={styles.calGrid}>
-            {calendarCells.map((cell, i) => {
-              if (!cell.day) return <View key={i} style={styles.calCell} />;
-              const isFuture = cell.date! > today;
-              const isToday =
-                cell.date!.toDateString() === today.toDateString();
-              const wasPrayed = prayedDates.has(cell.date!.toDateString());
-              return (
-                <View key={i} style={styles.calCell}>
-                  <View
-                    style={[
-                      styles.calDot,
-                      {
-                        backgroundColor: wasPrayed ? gold : "transparent",
-                        borderColor: isToday
-                          ? gold
-                          : wasPrayed
-                            ? gold
-                            : "transparent",
-                        borderWidth: isToday ? 1.5 : 0,
-                        opacity: isFuture ? 0.3 : 1,
-                      },
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.calDayNum,
-                        {
-                          color: wasPrayed
-                            ? "#FFFFFF"
-                            : isToday
-                              ? accent
-                              : colors.foreground,
-                          fontFamily: isToday
-                            ? "Inter_700Bold"
-                            : "Inter_500Medium",
-                        },
-                      ]}
-                    >
-                      {cell.day}
-                    </Text>
-                  </View>
-                </View>
-              );
-            })}
-          </View>
         </Animated.View>
 
         {/* Milestones */}
