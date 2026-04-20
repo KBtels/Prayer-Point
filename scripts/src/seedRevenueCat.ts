@@ -36,8 +36,8 @@ const PLAY_STORE_PACKAGE_NAME = "com.prayerpoint.app";
 const ENTITLEMENT_IDENTIFIER = "premium";
 const ENTITLEMENT_DISPLAY_NAME = "Prayer Point Premium";
 
-const OFFERING_IDENTIFIER = "premium_v3";
-const OFFERING_DISPLAY_NAME = "Premium Offering v3";
+const OFFERING_IDENTIFIER = "premium_v4";
+const OFFERING_DISPLAY_NAME = "Premium Offering v4";
 
 type Duration = "P1W" | "P1M" | "P2M" | "P3M" | "P6M" | "P1Y";
 
@@ -64,14 +64,14 @@ const TIERS: TierDefinition[] = [
     prices: [{ amount_micros: 8_500_000, currency: "USD" }],
   },
   {
-    productIdentifier: "prayerpoint_annual_v3",
-    playStoreProductIdentifier: "prayerpoint_annual_v3:annual",
-    displayName: "Prayer Point Annual (v3)",
+    productIdentifier: "prayerpoint_annual_v4",
+    playStoreProductIdentifier: "prayerpoint_annual_v4:annual",
+    displayName: "Prayer Point Annual (v4)",
     userFacingTitle: "Annual",
     duration: "P1Y",
     packageIdentifier: "$rc_annual",
     packageDisplayName: "Annual Subscription",
-    prices: [{ amount_micros: 95_000_000, currency: "USD" }],
+    prices: [{ amount_micros: 79_000_000, currency: "USD" }],
   },
 ];
 
