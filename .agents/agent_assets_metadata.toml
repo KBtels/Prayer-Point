@@ -23,3 +23,15 @@ id = "d7_6TT1T36gGeTCHLjfLo"
 uri = "file://deliverables/PrayerPoint_QA_Brief.md"
 type = "text"
 title = "Prayer Point — QA Brief"
+
+[[outputs]]
+id = "kMtpWyQktXEHTQAZY4bOJ"
+uri = "file://deliverables/PrayerPoint_Source.tar.gz"
+type = "unspecified"
+title = "Prayer Point — Full Source (tar.gz, 62 MB)"
+
+[[outputs]]
+id = "kxt2wOdgfIBABwYx1m3WA"
+uri = "file://deliverables/PrayerPoint_Codebase_Overview.md"
+type = "text"
+title = "Codebase Overview for Copilot / Investors"
