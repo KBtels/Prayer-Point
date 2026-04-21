@@ -184,7 +184,7 @@ export default function WithHimScreen() {
       <View style={[styles.header, { paddingTop: topInset + 12 }]}>
         <View style={{ width: 38 }} />
         <Text style={[styles.headerTitle, { color: colors.foreground }]}>
-          With Him
+          Space
         </Text>
         <ProfileButton />
       </View>

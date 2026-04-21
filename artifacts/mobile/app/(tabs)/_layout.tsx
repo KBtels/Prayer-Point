@@ -22,7 +22,7 @@ function NativeTabLayout() {
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="withhim">
         <Icon sf={{ default: "mic", selected: "mic.fill" }} />
-        <Label>With Him</Label>
+        <Label>Space</Label>
       </NativeTabs.Trigger>
     </NativeTabs>
   );
@@ -93,7 +93,7 @@ function ClassicTabLayout() {
       <Tabs.Screen
         name="withhim"
         options={{
-          title: "With Him",
+          title: "Space",
           tabBarIcon: ({ color }) =>
             isIOS ? (
               <SymbolView name="mic" tintColor={color} size={24} />
