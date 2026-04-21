@@ -64,7 +64,12 @@ interface AppState {
   totalFastMinutes: number;
   fastsCompleted: number;
   lastFastDate: string;
+  // Voice transcription usage (free tier limit, monthly reset)
+  voiceTranscriptionsUsed: number;
+  voiceTranscriptionsMonth: string;
 }
+
+export const FREE_VOICE_LIMIT = 5;
 
 interface AppContextValue extends AppState {
   setName: (name: string) => void;
@@ -90,6 +95,8 @@ interface AppContextValue extends AppState {
     quietEnd: number;
   }) => void;
   recordFastCompleted: (minutes: number) => void;
+  voiceUsage: () => { used: number; limit: number; remaining: number; allowed: boolean };
+  recordVoiceTranscription: () => void;
   isLoaded: boolean;
 }
 
@@ -126,7 +133,14 @@ const defaultState: AppState = {
   totalFastMinutes: 0,
   fastsCompleted: 0,
   lastFastDate: "",
+  voiceTranscriptionsUsed: 0,
+  voiceTranscriptionsMonth: "",
 };
+
+function currentMonthKey(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<AppState>(defaultState);
@@ -292,6 +306,28 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     [state, save]
   );
 
+  const voiceUsage = useCallback(() => {
+    const month = currentMonthKey();
+    const used =
+      state.voiceTranscriptionsMonth === month
+        ? state.voiceTranscriptionsUsed
+        : 0;
+    const limit = FREE_VOICE_LIMIT;
+    const allowed = state.isSubscribed || used < limit;
+    return { used, limit, remaining: Math.max(0, limit - used), allowed };
+  }, [state.isSubscribed, state.voiceTranscriptionsMonth, state.voiceTranscriptionsUsed]);
+
+  const recordVoiceTranscription = useCallback(() => {
+    const month = currentMonthKey();
+    const prevUsed =
+      state.voiceTranscriptionsMonth === month ? state.voiceTranscriptionsUsed : 0;
+    save({
+      ...state,
+      voiceTranscriptionsMonth: month,
+      voiceTranscriptionsUsed: prevUsed + 1,
+    });
+  }, [state, save]);
+
   return (
     <AppContext.Provider
       value={{
@@ -313,6 +349,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setSubscription,
         markSubscriptionPromptedAfterPrayer,
         setReminderSettings,
+        voiceUsage,
+        recordVoiceTranscription,
         recordFastCompleted,
         isLoaded,
       }}

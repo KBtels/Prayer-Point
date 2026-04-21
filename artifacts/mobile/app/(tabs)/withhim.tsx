@@ -5,6 +5,7 @@ import { transcribeAudio } from "@/lib/transcribe";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { Audio } from "expo-av";
 import * as Haptics from "expo-haptics";
+import { router } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import {
   Alert,
@@ -34,7 +35,14 @@ type Mode = "idle" | "recording" | "transcribing" | "review";
 export default function WithHimScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { reflections, addReflection } = useApp();
+  const {
+    reflections,
+    addReflection,
+    isSubscribed,
+    voiceUsage,
+    recordVoiceTranscription,
+  } = useApp();
+  const usage = voiceUsage();
 
   const topInset = Platform.OS === "web" ? 24 : insets.top;
   const bottomInset = Platform.OS === "web" ? 34 : insets.bottom;
@@ -79,6 +87,18 @@ export default function WithHimScreen() {
   }, [recording]);
 
   const startRecording = async () => {
+    if (!isSubscribed && !usage.allowed) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      Alert.alert(
+        "Voice limit reached",
+        `You've used all ${usage.limit} free voice reflections this month. Upgrade to Premium for unlimited voice journaling — or keep typing reflections (always free).`,
+        [
+          { text: "Type instead", onPress: () => setShowTextInput(true) },
+          { text: "See Premium", onPress: () => router.push("/subscribe") },
+        ]
+      );
+      return;
+    }
     try {
       const perm = await Audio.requestPermissionsAsync();
       if (perm.status !== "granted") {
@@ -117,6 +137,7 @@ export default function WithHimScreen() {
       setRecording(null);
       if (!uri) throw new Error("No recording captured");
       const transcript = await transcribeAudio(uri);
+      if (!isSubscribed) recordVoiceTranscription();
       setText(transcript.trim());
       setMode("review");
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -184,10 +205,50 @@ export default function WithHimScreen() {
             <TouchableOpacity
               onPress={startRecording}
               activeOpacity={0.85}
-              style={[styles.micBtn, { backgroundColor: gold }]}
+              style={[
+                styles.micBtn,
+                {
+                  backgroundColor: gold,
+                  opacity: !isSubscribed && !usage.allowed ? 0.5 : 1,
+                },
+              ]}
             >
               <Feather name="mic" size={32} color="#0A0A14" />
             </TouchableOpacity>
+
+            {!isSubscribed && (
+              <View style={styles.usagePill}>
+                <Feather
+                  name={usage.allowed ? "mic" : "lock"}
+                  size={12}
+                  color={usage.allowed ? colors.mutedForeground : gold}
+                />
+                <Text
+                  style={[
+                    styles.usageText,
+                    {
+                      color: usage.allowed ? colors.mutedForeground : gold,
+                    },
+                  ]}
+                >
+                  {usage.allowed
+                    ? `${usage.remaining} of ${usage.limit} free voice reflections left this month`
+                    : "Voice limit reached — upgrade for unlimited"}
+                </Text>
+              </View>
+            )}
+
+            {!isSubscribed && !usage.allowed && (
+              <TouchableOpacity
+                onPress={() => router.push("/subscribe")}
+                style={[styles.upgradeBtn, { backgroundColor: gold }]}
+              >
+                <Feather name="zap" size={14} color="#0A0A14" />
+                <Text style={[styles.upgradeBtnText, { color: "#0A0A14" }]}>
+                  Unlock unlimited voice
+                </Text>
+              </TouchableOpacity>
+            )}
 
             <TouchableOpacity
               onPress={() => setShowTextInput((v) => !v)}
@@ -437,6 +498,31 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 14,
+  },
+  usagePill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: 4,
+    paddingVertical: 4,
+    paddingHorizontal: 12,
+  },
+  usageText: {
+    fontSize: 12,
+    fontFamily: "Inter_500Medium",
+  },
+  upgradeBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 18,
+    borderRadius: 999,
+  },
+  upgradeBtnText: {
+    fontSize: 13,
+    fontFamily: "Inter_700Bold",
   },
   typeToggle: {
     flexDirection: "row",
