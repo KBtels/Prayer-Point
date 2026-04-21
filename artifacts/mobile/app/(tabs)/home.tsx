@@ -134,7 +134,7 @@ export default function HomeScreen() {
               {withGodPct}%
             </Text>
             <Text style={[styles.streakLabel, { color: colors.prayerText ?? "#E8D9B8" }]}>
-              with God
+              at peace
             </Text>
           </View>
         </View>
