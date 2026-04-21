@@ -193,13 +193,13 @@ export default function WithHimScreen() {
         {mode === "idle" && (
           <Animated.View entering={FadeIn.duration(400)} style={styles.idleWrap}>
             <Text style={[styles.kicker, { color: gold }]}>
-              SPEAK · BE HEARD · REMEMBER
+              SPEAK · BREATHE · RELEASE
             </Text>
             <Text style={[styles.title, { color: colors.foreground }]}>
-              What is God speaking to you?
+              What's on your mind?
             </Text>
             <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>
-              Tap the mic and just talk. We'll write it down for you.
+              Tap the mic and just talk. We'll capture it so your mind can let it go.
             </Text>
 
             <TouchableOpacity
