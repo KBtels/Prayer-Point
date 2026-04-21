@@ -289,22 +289,24 @@ export default function FastScreen() {
       </View>
 
       <View style={styles.fastBody}>
-        <Animated.View style={[pulseStyle, styles.breathRing]}>
-          <View style={[styles.breathRingOuter, { borderColor: gold + "33" }]}>
-            <View style={[styles.breathRingMid, { borderColor: gold + "55" }]}>
-              <View style={[styles.breathRingInner, { backgroundColor: gold + "1A" }]} />
+        <View style={styles.ringStack}>
+          <Animated.View style={[pulseStyle, styles.breathRingFill]}>
+            <View style={[styles.breathRingOuter, { borderColor: gold + "33" }]}>
+              <View style={[styles.breathRingMid, { borderColor: gold + "55" }]}>
+                <View style={[styles.breathRingInner, { backgroundColor: gold + "1A" }]} />
+              </View>
             </View>
-          </View>
-        </Animated.View>
+          </Animated.View>
 
-        <Animated.View entering={FadeIn.duration(600)} style={styles.timerWrap}>
-          <Text style={[styles.timerText, { color: "#FBF7F0" }]}>
-            {formatTime(secondsLeft)}
-          </Text>
-          <Text style={[styles.timerLabel, { color: "#FBF7F099" }]}>
-            {Math.round(progress * 100)}% with Him
-          </Text>
-        </Animated.View>
+          <Animated.View entering={FadeIn.duration(600)} style={styles.timerWrap}>
+            <Text style={[styles.timerText, { color: "#FBF7F0" }]}>
+              {formatTime(secondsLeft)}
+            </Text>
+            <Text style={[styles.timerLabel, { color: "#FBF7F099" }]}>
+              {Math.round(progress * 100)}% with Him
+            </Text>
+          </Animated.View>
+        </View>
 
         <Animated.View
           key={scriptureIdx}
@@ -444,9 +446,16 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingHorizontal: 32,
   },
-  breathRing: {
+  ringStack: {
+    width: 280,
+    height: 280,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  breathRingFill: {
     position: "absolute",
-    top: "20%",
+    alignItems: "center",
+    justifyContent: "center",
   },
   breathRingOuter: {
     width: 280,
@@ -471,12 +480,11 @@ const styles = StyleSheet.create({
   },
   timerWrap: {
     alignItems: "center",
-    marginTop: 30,
   },
   timerText: {
-    fontSize: 64,
+    fontSize: 52,
     fontFamily: "Inter_700Bold",
-    letterSpacing: 2,
+    letterSpacing: 1,
   },
   timerLabel: {
     fontSize: 13,
