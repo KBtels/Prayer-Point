@@ -29,7 +29,14 @@
       ],
       "expo-font",
       "expo-web-browser",
-      "expo-video"
+      "expo-video",
+      [
+        "expo-notifications",
+        {
+          "color": "#D4A843",
+          "defaultChannel": "prayer-reminders"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

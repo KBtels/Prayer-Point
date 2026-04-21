@@ -1,6 +1,11 @@
 import RatingModal from "@/components/RatingModal";
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
+import {
+  cancelAllReminders,
+  requestPermissions,
+  scheduleReminders,
+} from "@/lib/notifications";
 import { Ionicons, Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import * as ImagePicker from "expo-image-picker";
@@ -13,6 +18,7 @@ import {
   Platform,
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
   TouchableOpacity,
   View,
@@ -20,6 +26,8 @@ import {
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+
+const INTERVAL_OPTIONS = [1, 2, 3, 4, 6, 8];
 
 export default function SettingsScreen() {
   const colors = useColors();
@@ -33,8 +41,53 @@ export default function SettingsScreen() {
     appRating,
     appReview,
     setAppRating,
+    remindersEnabled,
+    reminderIntervalHours,
+    quietHoursStart,
+    quietHoursEnd,
+    setReminderSettings,
   } = useApp();
   const [showRating, setShowRating] = useState(false);
+
+  const gold = colors.goldGlow ?? "#D4A843";
+
+  const applyReminders = async (
+    enabled: boolean,
+    intervalHours: number,
+    quietStart: number,
+    quietEnd: number
+  ) => {
+    if (enabled) {
+      const granted = await requestPermissions();
+      if (!granted) {
+        Alert.alert(
+          "Notifications off",
+          "Enable notifications for Prayer Point in Settings to receive prayer reminders."
+        );
+        setReminderSettings({
+          enabled: false,
+          intervalHours,
+          quietStart,
+          quietEnd,
+        });
+        return;
+      }
+      await scheduleReminders({ intervalHours, quietStart, quietEnd });
+    } else {
+      await cancelAllReminders();
+    }
+    setReminderSettings({ enabled, intervalHours, quietStart, quietEnd });
+  };
+
+  const handleToggleReminders = (next: boolean) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    applyReminders(next, reminderIntervalHours, quietHoursStart, quietHoursEnd);
+  };
+
+  const handlePickInterval = (hours: number) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    applyReminders(remindersEnabled, hours, quietHoursStart, quietHoursEnd);
+  };
 
   const handlePickImage = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -208,6 +261,77 @@ export default function SettingsScreen() {
               value={prayFrequency || "—"}
               colors={colors}
             />
+          </View>
+        </Animated.View>
+
+        <Animated.View entering={FadeInDown.duration(500).delay(180)}>
+          <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>
+            Prayer Reminders
+          </Text>
+          <View
+            style={[
+              styles.infoCard,
+              { backgroundColor: colors.card, borderColor: colors.border },
+            ]}
+          >
+            <View style={styles.reminderRow}>
+              <View style={{ flex: 1, paddingRight: 12 }}>
+                <Text style={[styles.reminderTitle, { color: colors.foreground }]}>
+                  Pause to pray
+                </Text>
+                <Text style={[styles.reminderSub, { color: colors.mutedForeground }]}>
+                  Gentle nudges throughout the day. Tap one to pray instantly.
+                </Text>
+              </View>
+              <Switch
+                value={remindersEnabled}
+                onValueChange={handleToggleReminders}
+                trackColor={{ false: colors.border, true: gold }}
+                thumbColor={Platform.OS === "android" ? "#FBF7F0" : undefined}
+              />
+            </View>
+
+            {remindersEnabled && (
+              <>
+                <View style={[styles.divider, { backgroundColor: colors.border }]} />
+                <View style={styles.intervalSection}>
+                  <Text style={[styles.intervalLabel, { color: colors.mutedForeground }]}>
+                    Remind me every
+                  </Text>
+                  <View style={styles.intervalRow}>
+                    {INTERVAL_OPTIONS.map((h) => {
+                      const active = h === reminderIntervalHours;
+                      return (
+                        <TouchableOpacity
+                          key={h}
+                          onPress={() => handlePickInterval(h)}
+                          activeOpacity={0.85}
+                          style={[
+                            styles.intervalChip,
+                            {
+                              backgroundColor: active ? gold : "transparent",
+                              borderColor: active ? gold : colors.border,
+                            },
+                          ]}
+                        >
+                          <Text
+                            style={[
+                              styles.intervalChipText,
+                              { color: active ? "#0A0A14" : colors.foreground },
+                            ]}
+                          >
+                            {h}h
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                  <Text style={[styles.quietHint, { color: colors.mutedForeground }]}>
+                    Quiet hours: {quietHoursStart}:00 – {quietHoursEnd}:00
+                  </Text>
+                </View>
+              </>
+            )}
           </View>
         </Animated.View>
 
@@ -489,6 +613,52 @@ const styles = StyleSheet.create({
   divider: {
     height: 1,
     marginHorizontal: 18,
+  },
+  reminderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 18,
+    paddingVertical: 16,
+  },
+  reminderTitle: {
+    fontSize: 15,
+    fontFamily: "Inter_600SemiBold",
+    marginBottom: 2,
+  },
+  reminderSub: {
+    fontSize: 12,
+    fontFamily: "Inter_400Regular",
+    lineHeight: 17,
+  },
+  intervalSection: {
+    paddingHorizontal: 18,
+    paddingVertical: 14,
+  },
+  intervalLabel: {
+    fontSize: 12,
+    fontFamily: "Inter_500Medium",
+    marginBottom: 10,
+  },
+  intervalRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginBottom: 10,
+  },
+  intervalChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  intervalChipText: {
+    fontSize: 13,
+    fontFamily: "Inter_600SemiBold",
+  },
+  quietHint: {
+    fontSize: 11,
+    fontFamily: "Inter_400Regular",
+    marginTop: 4,
   },
   contactCard: {
     flexDirection: "row",

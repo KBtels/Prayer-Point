@@ -186,6 +186,44 @@ export default function HomeScreen() {
       </Animated.View>
 
       <Animated.View
+        entering={FadeInDown.duration(500).delay(350)}
+      >
+        <TouchableOpacity
+          activeOpacity={0.85}
+          onPress={() => router.push("/fast")}
+          style={[
+            styles.fastCard,
+            {
+              backgroundColor: colors.card,
+              borderColor: (colors.goldGlow ?? "#D4A843") + "55",
+            },
+          ]}
+        >
+          <View
+            style={[
+              styles.fastIcon,
+              { backgroundColor: (colors.goldGlow ?? "#D4A843") + "1F" },
+            ]}
+          >
+            <Ionicons
+              name="leaf-outline"
+              size={20}
+              color={colors.goldGlow ?? "#D4A843"}
+            />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.fastTitle, { color: colors.foreground }]}>
+              Phone Fast
+            </Text>
+            <Text style={[styles.fastSub, { color: colors.mutedForeground }]}>
+              Trade the scroll for stillness — 5, 15, 30, or 60 minutes.
+            </Text>
+          </View>
+          <Feather name="chevron-right" size={18} color={colors.mutedForeground} />
+        </TouchableOpacity>
+      </Animated.View>
+
+      <Animated.View
         entering={FadeInDown.duration(500).delay(400)}
         style={styles.secondaryActions}
       >
@@ -359,6 +397,32 @@ const styles = StyleSheet.create({
   prayBtnText: {
     fontSize: 18,
     fontFamily: "Inter_600SemiBold",
+  },
+  fastCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    marginBottom: 12,
+  },
+  fastIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  fastTitle: {
+    fontSize: 15,
+    fontFamily: "Inter_600SemiBold",
+    marginBottom: 2,
+  },
+  fastSub: {
+    fontSize: 12,
+    fontFamily: "Inter_400Regular",
+    lineHeight: 17,
   },
   secondaryActions: {
     flexDirection: "row",

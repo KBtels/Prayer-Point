@@ -6,10 +6,13 @@ import {
   useFonts,
 } from "@expo-google-fonts/inter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Stack } from "expo-router";
+import * as Notifications from "expo-notifications";
+import { router, Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import React, { useEffect } from "react";
 import { Alert } from "react-native";
+
+import "@/lib/notifications";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -50,6 +53,24 @@ function SubscriptionSync() {
 }
 
 function RootLayoutNav() {
+  useEffect(() => {
+    const sub = Notifications.addNotificationResponseReceivedListener(
+      (response) => {
+        const route = (response.notification.request.content.data as any)?.route;
+        if (typeof route === "string") {
+          try {
+            router.push(route as any);
+          } catch {}
+        } else {
+          try {
+            router.push("/pray");
+          } catch {}
+        }
+      }
+    );
+    return () => sub.remove();
+  }, []);
+
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="index" />
@@ -63,6 +84,7 @@ function RootLayoutNav() {
       <Stack.Screen name="pray" />
       <Stack.Screen name="word" />
       <Stack.Screen name="reflect" />
+      <Stack.Screen name="fast" />
     </Stack>
   );
 }

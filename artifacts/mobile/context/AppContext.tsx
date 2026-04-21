@@ -55,6 +55,15 @@ interface AppState {
   isSubscribed: boolean;
   subscriptionTier: string;
   subscriptionPromptedAfterPrayer: boolean;
+  // Prayer reminders
+  remindersEnabled: boolean;
+  reminderIntervalHours: number;
+  quietHoursStart: number;
+  quietHoursEnd: number;
+  // Phone fast
+  totalFastMinutes: number;
+  fastsCompleted: number;
+  lastFastDate: string;
 }
 
 interface AppContextValue extends AppState {
@@ -74,6 +83,13 @@ interface AppContextValue extends AppState {
   markRatingPrompted: () => void;
   setSubscription: (tier: string) => void;
   markSubscriptionPromptedAfterPrayer: () => void;
+  setReminderSettings: (opts: {
+    enabled: boolean;
+    intervalHours: number;
+    quietStart: number;
+    quietEnd: number;
+  }) => void;
+  recordFastCompleted: (minutes: number) => void;
   isLoaded: boolean;
 }
 
@@ -103,6 +119,13 @@ const defaultState: AppState = {
   isSubscribed: false,
   subscriptionTier: "",
   subscriptionPromptedAfterPrayer: false,
+  remindersEnabled: false,
+  reminderIntervalHours: 3,
+  quietHoursStart: 22,
+  quietHoursEnd: 7,
+  totalFastMinutes: 0,
+  fastsCompleted: 0,
+  lastFastDate: "",
 };
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
@@ -229,6 +252,33 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const markSubscriptionPromptedAfterPrayer = () =>
     save({ ...state, subscriptionPromptedAfterPrayer: true });
 
+  const setReminderSettings = (opts: {
+    enabled: boolean;
+    intervalHours: number;
+    quietStart: number;
+    quietEnd: number;
+  }) =>
+    save({
+      ...state,
+      remindersEnabled: opts.enabled,
+      reminderIntervalHours: opts.intervalHours,
+      quietHoursStart: opts.quietStart,
+      quietHoursEnd: opts.quietEnd,
+    });
+
+  const recordFastCompleted = useCallback(
+    (minutes: number) => {
+      const today = new Date().toDateString();
+      save({
+        ...state,
+        totalFastMinutes: state.totalFastMinutes + minutes,
+        fastsCompleted: state.fastsCompleted + 1,
+        lastFastDate: today,
+      });
+    },
+    [state, save]
+  );
+
   const addReflection = useCallback(
     (text: string, categories: string[]) => {
       const reflection: Reflection = {
@@ -262,6 +312,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         markRatingPrompted,
         setSubscription,
         markSubscriptionPromptedAfterPrayer,
+        setReminderSettings,
+        recordFastCompleted,
         isLoaded,
       }}
     >
