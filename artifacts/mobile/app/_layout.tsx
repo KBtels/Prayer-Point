@@ -85,6 +85,7 @@ function RootLayoutNav() {
       <Stack.Screen name="word" />
       <Stack.Screen name="reflect" />
       <Stack.Screen name="fast" />
+      <Stack.Screen name="profile" />
     </Stack>
   );
 }

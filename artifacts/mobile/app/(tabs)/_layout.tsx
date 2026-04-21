@@ -3,7 +3,7 @@ import { isLiquidGlassAvailable } from "expo-glass-effect";
 import { Tabs } from "expo-router";
 import { Icon, Label, NativeTabs } from "expo-router/unstable-native-tabs";
 import { SymbolView } from "expo-symbols";
-import { Feather, Ionicons } from "@expo/vector-icons";
+import { Feather } from "@expo/vector-icons";
 import React from "react";
 import { Platform, StyleSheet, View, useColorScheme } from "react-native";
 
@@ -20,9 +20,9 @@ function NativeTabLayout() {
         <Icon sf={{ default: "chart.bar", selected: "chart.bar.fill" }} />
         <Label>Momentum</Label>
       </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="profile">
-        <Icon sf={{ default: "person.crop.circle", selected: "person.crop.circle.fill" }} />
-        <Label>Profile</Label>
+      <NativeTabs.Trigger name="withhim">
+        <Icon sf={{ default: "mic", selected: "mic.fill" }} />
+        <Label>With Him</Label>
       </NativeTabs.Trigger>
     </NativeTabs>
   );
@@ -91,14 +91,14 @@ function ClassicTabLayout() {
         }}
       />
       <Tabs.Screen
-        name="profile"
+        name="withhim"
         options={{
-          title: "Profile",
+          title: "With Him",
           tabBarIcon: ({ color }) =>
             isIOS ? (
-              <SymbolView name="person.crop.circle" tintColor={color} size={24} />
+              <SymbolView name="mic" tintColor={color} size={24} />
             ) : (
-              <Feather name="user" size={22} color={color} />
+              <Feather name="mic" size={22} color={color} />
             ),
         }}
       />

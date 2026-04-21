@@ -1,5 +1,6 @@
 import HabitQuoteModal, { hasShownQuoteThisSession, markQuoteShownThisSession } from "@/components/HabitQuoteModal";
 import { Logo } from "@/components/Logo";
+import { ProfileButton } from "@/components/ProfileButton";
 import { VideoBackground } from "@/components/VideoBackground";
 import { HABIT_QUOTES } from "@/constants/quotes";
 import { useApp } from "@/context/AppContext";
@@ -84,6 +85,7 @@ export default function HomeScreen() {
               Good {getTimeOfDay()}, {name || "Friend"}
             </Text>
           </View>
+          <ProfileButton tint="rgba(255,255,255,0.12)" borderColor="rgba(255,255,255,0.25)" />
         </Animated.View>
       </View>
 
@@ -229,7 +231,7 @@ export default function HomeScreen() {
       >
         <TouchableOpacity
           style={[styles.secondaryBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
-          onPress={() => router.push("/reflect")}
+          onPress={() => router.push("/(tabs)/withhim")}
           activeOpacity={0.85}
         >
           <Feather name="book-open" size={20} color={colors.foreground} />

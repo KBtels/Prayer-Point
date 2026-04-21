@@ -371,7 +371,7 @@ export default function PrayScreen() {
 
           <TouchableOpacity
             style={styles.reflectLink}
-            onPress={() => router.replace("/reflect")}
+            onPress={() => router.replace("/(tabs)/withhim")}
           >
             <Text style={[styles.reflectLinkText, { color: colors.prayerText + "AA" ?? "#E8D9B8AA" }]}>
               Write a reflection

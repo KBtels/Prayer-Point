@@ -1,4 +1,5 @@
 import { Logo } from "@/components/Logo";
+import { ProfileButton } from "@/components/ProfileButton";
 import { VideoBackground } from "@/components/VideoBackground";
 import { HABIT_QUOTES } from "@/constants/quotes";
 import { useApp } from "@/context/AppContext";
@@ -185,6 +186,7 @@ export default function MomentumScreen() {
         {/* Logo */}
         <Animated.View entering={FadeInDown.duration(400)} style={styles.logoRow}>
           <Logo size={28} color="#FFFFFF" />
+          <ProfileButton tint="rgba(255,255,255,0.12)" borderColor="rgba(255,255,255,0.25)" />
         </Animated.View>
 
         {/* Header */}
@@ -770,7 +772,12 @@ const styles = StyleSheet.create({
     right: 0,
     overflow: "hidden",
   },
-  logoRow: { marginBottom: 14 },
+  logoRow: {
+    marginBottom: 14,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
   header: { marginBottom: 16 },
   eyebrow: {
     fontSize: 11,
