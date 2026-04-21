@@ -30,7 +30,22 @@ const DAILY_VERSE = {
 export default function HomeScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { name, streak, totalPrayers, lastPrayedDate } = useApp();
+  const { name, streak, totalPrayers, lastPrayedDate, prayerLogs } = useApp();
+
+  const withGodPct = React.useMemo(() => {
+    const WINDOW = 30;
+    const now = new Date();
+    const cutoff = new Date(now);
+    cutoff.setDate(now.getDate() - (WINDOW - 1));
+    const recentDays = new Set<string>();
+    for (const log of prayerLogs ?? []) {
+      const d = new Date(log.date);
+      if (!isNaN(d.getTime()) && d >= cutoff && d <= now) {
+        recentDays.add(d.toDateString());
+      }
+    }
+    return Math.round((recentDays.size / WINDOW) * 100);
+  }, [prayerLogs]);
   const [habitQuote] = useState(
     () => HABIT_QUOTES[Math.floor(Math.random() * HABIT_QUOTES.length)]
   );
@@ -111,6 +126,15 @@ export default function HomeScreen() {
             </Text>
             <Text style={[styles.streakLabel, { color: colors.prayerText ?? "#E8D9B8" }]}>
               prayers
+            </Text>
+          </View>
+          <View style={styles.streakDivider} />
+          <View>
+            <Text style={[styles.streakNumber, { color: colors.goldGlow ?? "#D4A843" }]}>
+              {withGodPct}%
+            </Text>
+            <Text style={[styles.streakLabel, { color: colors.prayerText ?? "#E8D9B8" }]}>
+              with God
             </Text>
           </View>
         </View>
