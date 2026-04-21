@@ -1,11 +1,11 @@
 {
   "expo": {
     "name": "Prayer Point",
-    "slug": "mobile",
+    "slug": "prayer-point",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "mobile",
+    "scheme": "prayerpoint",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
@@ -14,9 +14,19 @@
       "backgroundColor": "#FBF7F0"
     },
     "ios": {
-      "supportsTablet": false
+      "supportsTablet": false,
+      "bundleIdentifier": "com.prayerpoint.app",
+      "buildNumber": "1",
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "Prayer Point uses your microphone to record voice reflections that you can save to your private journal.",
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
-    "android": {},
+    "android": {
+      "package": "com.prayerpoint.app",
+      "versionCode": 1,
+      "permissions": ["RECORD_AUDIO", "POST_NOTIFICATIONS"]
+    },
     "web": {
       "favicon": "./assets/images/icon.png"
     },
