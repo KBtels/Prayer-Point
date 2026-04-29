@@ -35,3 +35,9 @@ id = "dbV3YYsJvo4jt0ktXkcna"
 uri = "file://deliverables/PrayerPoint_Maintenance_Cheatsheet.md"
 type = "text"
 title = "Solo Maintenance Cheat Sheet"
+
+[[outputs]]
+id = "TqLIHyqrUTq50fGzpepzg"
+uri = "file://prayer-point-content-sheet.md"
+type = "text"
+title = "Prayer Point — Content Sheet"
