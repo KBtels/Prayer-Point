@@ -1,5 +1,7 @@
 import RatingModal from "@/components/RatingModal";
 import { useApp } from "@/context/AppContext";
+import { useAuth } from "@/lib/auth";
+import { clearTranscriptionTokenCache } from "@/lib/transcribe";
 import { useColors } from "@/hooks/useColors";
 import {
   cancelAllReminders,
@@ -48,6 +50,7 @@ export default function SettingsScreen() {
     setReminderSettings,
   } = useApp();
   const [showRating, setShowRating] = useState(false);
+  const { user, isAuthenticated, login, logout } = useAuth();
 
   const gold = colors.goldGlow ?? "#D4A843";
 
@@ -426,6 +429,39 @@ export default function SettingsScreen() {
             </View>
             <Feather name="chevron-right" size={20} color={colors.mutedForeground} />
           </TouchableOpacity>
+        </Animated.View>
+
+        <Animated.View entering={FadeInDown.duration(500).delay(310)}>
+          {isAuthenticated ? (
+            <TouchableOpacity
+              style={[styles.resetBtn, { borderColor: colors.border, marginBottom: 8 }]}
+              onPress={async () => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                clearTranscriptionTokenCache();
+                await logout();
+              }}
+              activeOpacity={0.85}
+            >
+              <Feather name="log-out" size={18} color={colors.mutedForeground} />
+              <Text style={[styles.resetBtnText, { color: colors.mutedForeground }]}>
+                {user?.firstName ? `Sign out (${user.firstName})` : "Sign out"}
+              </Text>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity
+              style={[styles.resetBtn, { borderColor: gold, marginBottom: 8 }]}
+              onPress={async () => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                await login();
+              }}
+              activeOpacity={0.85}
+            >
+              <Feather name="log-in" size={18} color={gold} />
+              <Text style={[styles.resetBtnText, { color: gold }]}>
+                Sign in for voice journaling
+              </Text>
+            </TouchableOpacity>
+          )}
         </Animated.View>
 
         <Animated.View entering={FadeInDown.duration(500).delay(325)}>

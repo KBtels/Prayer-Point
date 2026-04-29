@@ -56,8 +56,11 @@
     "zod-validation-error": "^3.4.0"
   },
   "dependencies": {
+    "expo-auth-session": "~7.0.11",
     "expo-av": "~16.0.8",
+    "expo-crypto": "~15.0.9",
     "expo-notifications": "~0.32.16",
+    "expo-secure-store": "~15.0.8",
     "expo-video": "~3.0.16",
     "react-native-purchases": "9.7.2"
   }

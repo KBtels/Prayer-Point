@@ -13,6 +13,7 @@ import React, { useEffect } from "react";
 import { Alert } from "react-native";
 
 import "@/lib/notifications";
+import Purchases from "react-native-purchases";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -24,6 +25,7 @@ import {
   initializeRevenueCat,
   useSubscription,
 } from "@/lib/revenuecat";
+import { AuthProvider, useAuth } from "@/lib/auth";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -33,6 +35,15 @@ try {
   initializeRevenueCat();
 } catch (err: any) {
   Alert.alert("RevenueCat Unavailable", err?.message ?? "Unknown error");
+}
+
+function RcIdentitySync() {
+  const { user } = useAuth();
+  useEffect(() => {
+    if (!user?.id) return;
+    Purchases.logIn(user.id).catch(() => {});
+  }, [user?.id]);
+  return null;
 }
 
 function SubscriptionSync() {
@@ -110,16 +121,19 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <ErrorBoundary>
         <QueryClientProvider client={queryClient}>
-          <AppProvider>
-            <SubscriptionProvider>
-              <SubscriptionSync />
-              <GestureHandlerRootView>
-                <KeyboardProvider>
-                  <RootLayoutNav />
-                </KeyboardProvider>
-              </GestureHandlerRootView>
-            </SubscriptionProvider>
-          </AppProvider>
+          <AuthProvider>
+            <AppProvider>
+              <SubscriptionProvider>
+                <RcIdentitySync />
+                <SubscriptionSync />
+                <GestureHandlerRootView>
+                  <KeyboardProvider>
+                    <RootLayoutNav />
+                  </KeyboardProvider>
+                </GestureHandlerRootView>
+              </SubscriptionProvider>
+            </AppProvider>
+          </AuthProvider>
         </QueryClientProvider>
       </ErrorBoundary>
     </SafeAreaProvider>

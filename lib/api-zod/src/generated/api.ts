@@ -14,3 +14,44 @@ import * as zod from "zod";
 export const HealthCheckResponse = zod.object({
   status: zod.string(),
 });
+
+/**
+ * Returns the authenticated user from the current session
+ * @summary Get current auth user
+ */
+export const GetCurrentAuthUserResponse = zod.object({
+  user: zod.union([
+    zod.object({
+      id: zod.string(),
+      email: zod.string().nullable(),
+      firstName: zod.string().nullable(),
+      lastName: zod.string().nullable(),
+      profileImageUrl: zod.string().nullable(),
+    }),
+    zod.null(),
+  ]),
+});
+
+/**
+ * Exchanges an OIDC authorization code for a session token (mobile flow)
+ * @summary Exchange mobile authorization code
+ */
+export const ExchangeMobileAuthorizationCodeBody = zod.object({
+  code: zod.string(),
+  code_verifier: zod.string(),
+  redirect_uri: zod.string(),
+  state: zod.string(),
+  nonce: zod.string().nullish(),
+});
+
+export const ExchangeMobileAuthorizationCodeResponse = zod.object({
+  token: zod.string(),
+});
+
+/**
+ * Deletes the mobile session
+ * @summary Logout mobile session
+ */
+export const LogoutMobileSessionResponse = zod.object({
+  success: zod.boolean(),
+});

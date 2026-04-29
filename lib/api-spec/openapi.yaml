@@ -10,6 +10,8 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication operations
 paths:
   /healthz:
     get:
@@ -24,6 +26,51 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /auth/user:
+    get:
+      operationId: getCurrentAuthUser
+      tags: [auth]
+      summary: Get current auth user
+      description: Returns the authenticated user from the current session
+      responses:
+        "200":
+          description: Auth state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetCurrentAuthUserResponse"
+  /mobile-auth/token-exchange:
+    post:
+      operationId: exchangeMobileAuthorizationCode
+      tags: [auth]
+      summary: Exchange mobile authorization code
+      description: Exchanges an OIDC authorization code for a session token (mobile flow)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExchangeMobileAuthorizationCodeBody"
+      responses:
+        "200":
+          description: Session token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExchangeMobileAuthorizationCodeResponse"
+  /mobile-auth/logout:
+    post:
+      operationId: logoutMobileSession
+      tags: [auth]
+      summary: Logout mobile session
+      description: Deletes the mobile session
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LogoutMobileSessionResponse"
 components:
   schemas:
     HealthStatus:
@@ -33,4 +80,69 @@ components:
           type: string
       required:
         - status
+    AuthUser:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+          nullable: true
+        firstName:
+          type: string
+          nullable: true
+        lastName:
+          type: string
+          nullable: true
+        profileImageUrl:
+          type: string
+          nullable: true
+      required:
+        - id
+        - email
+        - firstName
+        - lastName
+        - profileImageUrl
+    GetCurrentAuthUserResponse:
+      type: object
+      properties:
+        user:
+          oneOf:
+            - $ref: "#/components/schemas/AuthUser"
+            - type: "null"
+      required:
+        - user
+    ExchangeMobileAuthorizationCodeBody:
+      type: object
+      properties:
+        code:
+          type: string
+        code_verifier:
+          type: string
+        redirect_uri:
+          type: string
+        state:
+          type: string
+        nonce:
+          type: string
+          nullable: true
+      required:
+        - code
+        - code_verifier
+        - redirect_uri
+        - state
+    ExchangeMobileAuthorizationCodeResponse:
+      type: object
+      properties:
+        token:
+          type: string
+      required:
+        - token
+    LogoutMobileSessionResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+      required:
+        - success
 

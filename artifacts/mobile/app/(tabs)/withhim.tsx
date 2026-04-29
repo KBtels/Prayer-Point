@@ -137,11 +137,35 @@ export default function WithHimScreen() {
       setRecording(null);
       if (!uri) throw new Error("No recording captured");
       const transcript = await transcribeAudio(uri);
-      if (!isSubscribed) recordVoiceTranscription();
+      recordVoiceTranscription();
       setText(transcript.trim());
       setMode("review");
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (err: any) {
+      if (err?.message === "LIMIT_REACHED") {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+        Alert.alert(
+          "Voice limit reached",
+          `You've used all ${usage.limit} free voice reflections this month. Upgrade to Premium for unlimited voice journaling — or keep typing reflections (always free).`,
+          [
+            { text: "Type instead", onPress: () => { setMode("idle"); setShowTextInput(true); } },
+            { text: "See Premium", onPress: () => { setMode("idle"); router.push("/subscribe"); } },
+          ]
+        );
+        return;
+      }
+      if (err?.message === "UNAUTHENTICATED") {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+        Alert.alert(
+          "Sign in required",
+          "Please sign in to use voice journaling.",
+          [
+            { text: "Type instead", onPress: () => { setMode("idle"); setShowTextInput(true); } },
+            { text: "Sign in", onPress: () => { setMode("idle"); router.push("/profile"); } },
+          ]
+        );
+        return;
+      }
       Alert.alert(
         "Couldn't transcribe",
         err?.message ?? "Try again, or type your reflection instead."
