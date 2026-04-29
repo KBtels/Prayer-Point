@@ -174,3 +174,7 @@ overrides:
   # (expand() function signature unchanged; v5 only added ESM exports). pnpm install and
   # workspace builds confirm no regressions.
   "minimatch>brace-expansion": "2.0.3"
+  # Security: fix XSS vulnerability in postcss (GHSA-qx2v-qp2m-jg93)
+  "postcss": "8.5.10"
+  # Security: fix buffer bounds check vulnerability in uuid (GHSA-w5hq-g745-h8pq)
+  "uuid": "14.0.0"
