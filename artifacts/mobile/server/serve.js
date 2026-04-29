@@ -15,6 +15,7 @@ const path = require("path");
 
 const STATIC_ROOT = path.resolve(__dirname, "..", "static-build");
 const TEMPLATE_PATH = path.resolve(__dirname, "templates", "landing-page.html");
+const VENDOR_ROOT = path.resolve(__dirname, "vendor");
 const basePath = (process.env.BASE_PATH || "/").replace(/\/+$/, "");
 
 const MIME_TYPES = {
@@ -75,7 +76,8 @@ function serveLandingPage(req, res, landingPageTemplate, appName) {
   const html = landingPageTemplate
     .replace(/BASE_URL_PLACEHOLDER/g, baseUrl)
     .replace(/EXPS_URL_PLACEHOLDER/g, expsUrl)
-    .replace(/APP_NAME_PLACEHOLDER/g, appName);
+    .replace(/APP_NAME_PLACEHOLDER/g, appName)
+    .replace(/BASE_PATH_PLACEHOLDER/g, basePath);
 
   res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
   res.end(html);
@@ -124,6 +126,21 @@ const server = http.createServer((req, res) => {
     if (pathname === "/") {
       return serveLandingPage(req, res, landingPageTemplate, appName);
     }
+  }
+
+  if (pathname.startsWith("/vendor/")) {
+    const safeName = path.basename(pathname);
+    const vendorFile = path.join(VENDOR_ROOT, safeName);
+    if (!vendorFile.startsWith(VENDOR_ROOT) || !fs.existsSync(vendorFile)) {
+      res.writeHead(404);
+      res.end("Not Found");
+      return;
+    }
+    const ext = path.extname(vendorFile).toLowerCase();
+    const contentType = MIME_TYPES[ext] || "application/octet-stream";
+    res.writeHead(200, { "content-type": contentType });
+    res.end(fs.readFileSync(vendorFile));
+    return;
   }
 
   serveStaticFile(pathname, res);
