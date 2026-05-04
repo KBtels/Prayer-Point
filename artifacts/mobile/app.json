@@ -2,6 +2,7 @@
   "expo": {
     "name": "Prayer Point",
     "slug": "prayer-point",
+    "owner": "Kabelotele",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -51,6 +52,11 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "7f608fa2-b98e-4174-9566-0efcd4498d83"
+      }
     }
   }
 }
