@@ -16,6 +16,12 @@
     },
     "production": {
       "autoIncrement": true,
+      "ios": {
+        "image": "latest"
+      },
+      "android": {
+        "image": "latest"
+      },
       "env": {
         "EXPO_PUBLIC_DOMAIN": "https://REPLACE-WITH-YOUR-REPLIT-DEPLOY-URL.replit.app"
       }
