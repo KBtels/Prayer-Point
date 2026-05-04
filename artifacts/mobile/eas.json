@@ -23,7 +23,7 @@
         "image": "latest"
       },
       "env": {
-        "EXPO_PUBLIC_DOMAIN": "https://REPLACE-WITH-YOUR-REPLIT-DEPLOY-URL.replit.app"
+        "EXPO_PUBLIC_DOMAIN": "prayer-point-kabelotels.replit.app"
       }
     }
   },
